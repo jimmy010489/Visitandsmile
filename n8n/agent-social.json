@@ -1,0 +1,247 @@
+{
+  "name": "Deadpool IA — Agent Réseaux Sociaux",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "name": "Cron Génération 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "id": "cron-generate"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_config?connected=eq.true&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get Connected Platforms",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "id": "get-platforms"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/sales?order=sale_date.desc&limit=3&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get Recent Properties",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 480],
+      "id": "get-properties"
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-haiku-latest",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Tu es un expert en community management immobilier. Tu crées du contenu pour les réseaux sociaux d'Alison Mendes, auto-entrepreneuse immobilière à Orléans sous la marque 'Visit & Smile'. Adapte le ton et le format selon la plateforme demandée. Retourne un JSON avec les champs: platform, content_text, hashtags (array), format_type."
+            },
+            {
+              "role": "user",
+              "content": "Génère un post pour {{ $json.platform }} avec le ton '{{ $json.tone }}' pour l'audience '{{ $json.target_audience }}'. Format préféré: {{ $json.preferred_format }}. Biens récents disponibles: {{ JSON.stringify($node['Get Recent Properties'].json) }}. Retourne uniquement le JSON."
+            }
+          ]
+        }
+      },
+      "name": "Claude Génère Contenu",
+      "type": "n8n-nodes-base.anthropic",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "claude-content",
+      "credentials": { "anthropicApi": { "id": "anthropic-key", "name": "Anthropic API" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nlet content;\ntry {\n  const text = response.content[0].text;\n  content = JSON.parse(text);\n} catch(e) {\n  content = {\n    platform: 'instagram',\n    content_text: response.content[0].text,\n    hashtags: ['#immobilier', '#orleans', '#visitandsmile'],\n    format_type: 'post'\n  };\n}\n\n// Programmer pour le prochain créneau optimal\nconst now = new Date();\nconst scheduled = new Date(now);\nscheduled.setHours(12, 30, 0, 0);\nif (scheduled <= now) {\n  scheduled.setDate(scheduled.getDate() + 1);\n}\n\nreturn [{\n  json: {\n    ...content,\n    user_id: $env.ALISON_USER_ID,\n    scheduled_at: scheduled.toISOString(),\n    status: 'scheduled'\n  }\n}];"
+      },
+      "name": "Parse & Schedule",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "parse-schedule"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "body": "={{ JSON.stringify({ user_id: $json.user_id, platform: $json.platform, content_text: $json.content_text, hashtags: $json.hashtags, scheduled_at: $json.scheduled_at, status: $json.status }) }}"
+      },
+      "name": "Save Post Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "id": "save-post"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "publish-post",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook Publier Post",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 660],
+      "id": "webhook-publish",
+      "webhookId": "publish-post"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ $json.body.platform }}", "rightValue": "facebook", "operator": { "type": "string", "operation": "equals" } }
+          ]
+        }
+      },
+      "name": "Switch Platform",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [460, 660],
+      "id": "switch-platform"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/{{ $env.FB_PAGE_ID }}/feed",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "message", "value": "={{ $json.body.content_text }}\n\n{{ ($json.body.hashtags || []).join(' ') }}" },
+            { "name": "access_token", "value": "={{ $env.FB_PAGE_TOKEN }}" }
+          ]
+        }
+      },
+      "name": "Publish Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 560],
+      "id": "publish-fb"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/{{ $env.IG_BUSINESS_ID }}/media",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "caption", "value": "={{ $json.body.content_text }}\n\n{{ ($json.body.hashtags || []).join(' ') }}" },
+            { "name": "access_token", "value": "={{ $env.FB_PAGE_TOKEN }}" }
+          ]
+        }
+      },
+      "name": "Publish Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 740],
+      "id": "publish-ig"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{ \"user_id\": \"{{ $env.ALISON_USER_ID }}\", \"agent\": \"social\", \"icon\": \"fa-check-circle\", \"message\": \"<strong>Post publié</strong> — {{ $json.body.platform }} : {{ $json.body.content_text.substring(0, 60) }}...\" }"
+      },
+      "name": "Log Activity Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 660],
+      "id": "log-post"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"success\": true }"
+      },
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 660],
+      "id": "respond-ok-pub"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 20 * * *" }]
+        }
+      },
+      "name": "Cron Stats 20h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 900],
+      "id": "cron-stats"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_posts?status=eq.published&published_at=gte.{{ $today.minus(7, 'days').toISODate() }}&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get Published Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 900],
+      "id": "get-published"
+    }
+  ],
+  "connections": {
+    "Cron Génération 8h": { "main": [[{ "node": "Get Connected Platforms", "type": "main", "index": 0 }, { "node": "Get Recent Properties", "type": "main", "index": 0 }]] },
+    "Get Connected Platforms": { "main": [[{ "node": "Claude Génère Contenu", "type": "main", "index": 0 }]] },
+    "Claude Génère Contenu": { "main": [[{ "node": "Parse & Schedule", "type": "main", "index": 0 }]] },
+    "Parse & Schedule": { "main": [[{ "node": "Save Post Supabase", "type": "main", "index": 0 }]] },
+    "Webhook Publier Post": { "main": [[{ "node": "Switch Platform", "type": "main", "index": 0 }]] },
+    "Switch Platform": { "main": [[{ "node": "Publish Facebook", "type": "main", "index": 0 }], [{ "node": "Publish Instagram", "type": "main", "index": 0 }]] },
+    "Publish Facebook": { "main": [[{ "node": "Log Activity Post", "type": "main", "index": 0 }]] },
+    "Publish Instagram": { "main": [[{ "node": "Log Activity Post", "type": "main", "index": 0 }]] },
+    "Log Activity Post": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] },
+    "Cron Stats 20h": { "main": [[{ "node": "Get Published Posts", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Agent Social" }]
+}

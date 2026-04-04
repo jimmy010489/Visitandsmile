@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#d4a931">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Visit & Smile">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="description" content="Visit & Smile — Assistant IA pour agents immobiliers. Gestion comptable, reseaux sociaux et planning automatises.">
+    <meta property="og:title" content="Visit & Smile — Deadpool IA">
+    <meta property="og:description" content="Votre assistant IA immobilier : comptabilite, reseaux sociaux et planning automatises.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="icons/icon-512.png">
+    <meta name="twitter:card" content="summary">
+    <title>Visit & Smile — Deadpool IA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <!-- PWA Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-content">
+            <div class="splash-logo"><i class="fas fa-robot"></i></div>
+            <h1 class="splash-title">Visit & Smile</h1>
+            <span class="splash-sub">Deadpool IA</span>
+            <div class="splash-loader">
+                <div class="splash-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-bg-grid"></div>
+        <div class="login-container">
+            <div class="login-logo">
+                <div class="login-logo-icon"><i class="fas fa-robot"></i></div>
+                <h1>Visit & Smile</h1>
+                <span class="login-logo-sub">Deadpool IA</span>
+            </div>
+            <form class="login-form" id="loginForm">
+                <div class="login-field">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" value="alison@visitandsmile.fr" autocomplete="off">
+                </div>
+                <div class="login-field">
+                    <label><i class="fas fa-lock"></i> Mot de passe</label>
+                    <input type="password" id="loginPassword" value="demo2024" autocomplete="off">
+                </div>
+                <button type="submit" class="login-btn">
+                    <span>Se connecter</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <p class="login-error" style="display:none;color:var(--red);font-size:0.8rem;text-align:center;margin-top:0.5rem"></p>
+                <p class="login-hint">Compte de démonstration</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon"><i class="fas fa-robot"></i></span>
+                <div class="logo-text">
+                    <h1>Visit & Smile</h1>
+                    <span class="logo-subtitle">Deadpool IA</span>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <div class="nav-section-title">Agents IA</div>
+            <a href="#" class="nav-item" data-page="agent-compta">
+                <i class="fas fa-calculator"></i>
+                <span>Comptabilité</span>
+                <span class="nav-badge active-badge">ON</span>
+            </a>
+            <a href="#" class="nav-item" data-page="agent-social">
+                <i class="fas fa-share-nodes"></i>
+                <span>Réseaux Sociaux</span>
+                <span class="nav-badge active-badge">ON</span>
+            </a>
+            <a href="#" class="nav-item" data-page="agent-planning">
+                <i class="fas fa-calendar-days"></i>
+                <span>Planning & RDV</span>
+                <span class="nav-badge active-badge">ON</span>
+            </a>
+            <div class="nav-section-title">Gestion</div>
+            <a href="#" class="nav-item" data-page="clients">
+                <i class="fas fa-address-book"></i>
+                <span>Clients</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fas fa-gear"></i>
+                <span>Paramètres</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">AM</div>
+                <div class="user-details">
+                    <span class="user-name">Alison Mendes</span>
+                    <span class="user-role">Auto-entrepreneuse</span>
+                </div>
+                <button class="topbar-btn" id="logoutBtn" title="Déconnexion" style="margin-left:auto;font-size:0.8rem;opacity:0.6">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Rechercher client, vente, RDV... (Ctrl+K pour commandes)" id="searchInput">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            <div class="topbar-actions">
+                <button class="topbar-btn" id="notifBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-dot"></span>
+                </button>
+                <button class="topbar-btn">
+                    <i class="fas fa-calendar"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Motivation Banner -->
+        <div class="motivation-banner" id="motivationBanner">
+            <div class="motivation-content">
+                <span class="motivation-icon"><i class="fas fa-fire"></i></span>
+                <p class="motivation-text">Alison, tu as déjà réalisé 8 ventes ce mois ! Continue comme ça, tu es sur la bonne voie 💪</p>
+            </div>
+            <button class="motivation-close" onclick="this.parentElement.style.display='none'"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div class="page active" id="page-dashboard">
+            <div class="page-header">
+                <h2>Tableau de bord</h2>
+                <p class="page-subtitle">Vue d'ensemble de vos agents IA</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-euro-sign"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">12.4k</span>
+                        <span class="stat-label">CA ce mois</span>
+                        <span class="stat-trend up"><i class="fas fa-arrow-up"></i> +18% vs mois dernier</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">8</span>
+                        <span class="stat-label">Ventes ce mois</span>
+                        <span class="stat-trend up"><i class="fas fa-arrow-up"></i> +3 vs mois dernier</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">2.4k</span>
+                        <span class="stat-label">Engagement social</span>
+                        <span class="stat-trend up"><i class="fas fa-arrow-up"></i> +34% cette semaine</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">14</span>
+                        <span class="stat-label">RDV cette semaine</span>
+                        <span class="stat-trend up"><i class="fas fa-arrow-up"></i> +5 vs semaine dernière</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="config-grid">
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-bar"></i> CA mensuel (6 derniers mois)</h4>
+                    <div class="chart-bars" id="chartCA">
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">8.2k</span>
+                            <div class="chart-bar gold" style="height: 55%"></div>
+                            <span class="chart-bar-label">Nov</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">9.1k</span>
+                            <div class="chart-bar gold" style="height: 61%"></div>
+                            <span class="chart-bar-label">Déc</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">7.8k</span>
+                            <div class="chart-bar gold" style="height: 52%"></div>
+                            <span class="chart-bar-label">Jan</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">10.5k</span>
+                            <div class="chart-bar gold" style="height: 70%"></div>
+                            <span class="chart-bar-label">Fév</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">11.2k</span>
+                            <div class="chart-bar gold" style="height: 75%"></div>
+                            <span class="chart-bar-label">Mars</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">12.4k</span>
+                            <div class="chart-bar gold" style="height: 83%"></div>
+                            <span class="chart-bar-label">Avr</span>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="chart-legend-item"><span class="chart-legend-dot gold"></span> Chiffre d'affaires</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Ventes & RDV</h4>
+                    <div class="chart-bars" id="chartVentes">
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">4</span>
+                            <div class="chart-bar green" style="height: 40%"></div>
+                            <span class="chart-bar-label">Nov</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">5</span>
+                            <div class="chart-bar green" style="height: 50%"></div>
+                            <span class="chart-bar-label">Déc</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">3</span>
+                            <div class="chart-bar green" style="height: 30%"></div>
+                            <span class="chart-bar-label">Jan</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">6</span>
+                            <div class="chart-bar green" style="height: 60%"></div>
+                            <span class="chart-bar-label">Fév</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">7</span>
+                            <div class="chart-bar green" style="height: 70%"></div>
+                            <span class="chart-bar-label">Mars</span>
+                        </div>
+                        <div class="chart-bar-col">
+                            <span class="chart-bar-value">8</span>
+                            <div class="chart-bar green" style="height: 80%"></div>
+                            <span class="chart-bar-label">Avr</span>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="chart-legend-item"><span class="chart-legend-dot green"></span> Ventes conclues</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Status Cards -->
+            <div class="section-title">
+                <h3>État des agents</h3>
+            </div>
+            <div class="agents-grid">
+                <!-- Agent 1 - Comptable -->
+                <div class="agent-card" data-navigate="agent-compta">
+                    <div class="agent-header">
+                        <div class="agent-icon leads"><i class="fas fa-calculator"></i></div>
+                        <div class="agent-status-indicator online"></div>
+                    </div>
+                    <h4>Agent Comptable</h4>
+                    <p class="agent-desc">Suit votre chiffre d'affaires, ventes, charges et vous aide pour les déclarations.</p>
+                    <div class="agent-metrics">
+                        <div class="metric">
+                            <span class="metric-value">12.4k€</span>
+                            <span class="metric-label">CA mensuel</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">68%</span>
+                            <span class="metric-label">Marge nette</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">3</span>
+                            <span class="metric-label">Déclarations</span>
+                        </div>
+                    </div>
+                    <div class="agent-footer">
+                        <span class="agent-tag">URSSAF</span>
+                        <span class="agent-tag">Impôts</span>
+                        <span class="agent-tag">Bénéfices</span>
+                    </div>
+                </div>
+
+                <!-- Agent 2 - Réseaux Sociaux -->
+                <div class="agent-card" data-navigate="agent-social">
+                    <div class="agent-header">
+                        <div class="agent-icon social"><i class="fas fa-share-nodes"></i></div>
+                        <div class="agent-status-indicator online"></div>
+                    </div>
+                    <h4>Agent Réseaux Sociaux</h4>
+                    <p class="agent-desc">Génère et publie du contenu sur tous les réseaux automatiquement.</p>
+                    <div class="agent-metrics">
+                        <div class="metric">
+                            <span class="metric-value">42</span>
+                            <span class="metric-label">Posts/mois</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">2.4k</span>
+                            <span class="metric-label">Interactions</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">+18%</span>
+                            <span class="metric-label">Croissance</span>
+                        </div>
+                    </div>
+                    <div class="agent-footer">
+                        <span class="agent-tag">Instagram</span>
+                        <span class="agent-tag">Facebook</span>
+                        <span class="agent-tag">LinkedIn</span>
+                    </div>
+                </div>
+
+                <!-- Agent 3 - Planning & RDV -->
+                <div class="agent-card" data-navigate="agent-planning">
+                    <div class="agent-header">
+                        <div class="agent-icon followup"><i class="fas fa-calendar-days"></i></div>
+                        <div class="agent-status-indicator online"></div>
+                    </div>
+                    <h4>Agent Planning & RDV</h4>
+                    <p class="agent-desc">RDV, relances et messages personnalisés (anniversaires, fêtes) automatiquement.</p>
+                    <div class="agent-metrics">
+                        <div class="metric">
+                            <span class="metric-value">14</span>
+                            <span class="metric-label">RDV/semaine</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">96%</span>
+                            <span class="metric-label">Confirmés</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">2</span>
+                            <span class="metric-label">Sources</span>
+                        </div>
+                    </div>
+                    <div class="agent-footer">
+                        <span class="agent-tag">Google Calendar</span>
+                        <span class="agent-tag">Email</span>
+                        <span class="agent-tag">SMS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-title">
+                <h3>Activité récente</h3>
+            </div>
+            <div class="activity-feed">
+                <div class="activity-item">
+                    <div class="activity-icon leads"><i class="fas fa-calculator"></i></div>
+                    <div class="activity-content">
+                        <p><strong>Déclaration URSSAF</strong> — Rappel : déclaration trimestrielle à envoyer avant le 15 avril</p>
+                        <span class="activity-time">Il y a 3 min</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon social"><i class="fab fa-instagram"></i></div>
+                    <div class="activity-content">
+                        <p><strong>Post publié</strong> — Nouveau T4 lumineux rue Royale — 127 likes, 8 commentaires</p>
+                        <span class="activity-time">Il y a 15 min</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon followup"><i class="fas fa-calendar-check"></i></div>
+                    <div class="activity-content">
+                        <p><strong>RDV confirmé</strong> — Visite T3 Saint-Marceau avec Marie Dupont, demain 14h30</p>
+                        <span class="activity-time">Il y a 28 min</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon leads"><i class="fas fa-chart-line"></i></div>
+                    <div class="activity-content">
+                        <p><strong>Vente enregistrée</strong> — T2 Centre-ville vendu 145 000€, commission 4 350€</p>
+                        <span class="activity-time">Il y a 45 min</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon followup"><i class="fas fa-envelope-open"></i></div>
+                    <div class="activity-content">
+                        <p><strong>Email reçu</strong> — Jean Petit confirme le rendez-vous de vendredi 10h</p>
+                        <span class="activity-time">Il y a 1h</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Compta Page -->
+        <div class="page" id="page-agent-compta">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2><i class="fas fa-calculator"></i> Agent Comptable</h2>
+                    <p class="page-subtitle">Suivi automatique de votre chiffre d'affaires, charges et déclarations</p>
+                </div>
+                <div class="page-header-right">
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked id="toggle-compta">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Actif</span>
+                </div>
+            </div>
+
+            <!-- Config Section -->
+            <div class="config-grid">
+                <div class="config-card">
+                    <h4><i class="fas fa-chart-pie"></i> Tableau de bord financier</h4>
+                    <div class="source-list">
+                        <div class="source-item">
+                            <span class="source-name">Chiffre d'affaires (Avril)</span>
+                            <span class="source-status connected">12 400 €</span>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">Charges & frais</span>
+                            <span class="source-status">3 720 €</span>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">Bénéfice net</span>
+                            <span class="source-status connected">8 680 €</span>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">Taux de marge</span>
+                            <span class="source-status">68%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-file-invoice"></i> Déclarations & rappels</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Régime fiscal</label>
+                            <select>
+                                <option>Micro-entrepreneur</option>
+                                <option>Réel simplifié</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prochaine déclaration URSSAF</label>
+                            <span class="form-text">15 avril 2026 — Trimestrielle</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Déclaration impôts</label>
+                            <span class="form-text">Avant le 30 mai 2026</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Checklist</label>
+                            <div class="checkbox-list">
+                                <label class="checkbox-item"><input type="checkbox" checked> Déclaration URSSAF Q1 envoyée</label>
+                                <label class="checkbox-item"><input type="checkbox"> Déclaration URSSAF Q2 (15 avril)</label>
+                                <label class="checkbox-item"><input type="checkbox"> Déclaration revenus 2025</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> CFE payée</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div class="section-title">
+                <h3>Historique des ventes</h3>
+                <button class="btn-outline btn-sm" id="btnExportCSV"><i class="fas fa-download"></i> Export CSV</button>
+                <button class="btn-gold btn-sm" id="btnNouvelleVente"><i class="fas fa-plus"></i> Nouvelle vente</button>
+                <div class="filter-bar">
+                    <button class="filter-btn active">Ce mois</button>
+                    <button class="filter-btn">Ce trimestre</button>
+                    <button class="filter-btn">Cette année</button>
+                </div>
+            </div>
+            <div class="contacts-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Bien</th>
+                            <th>Prix de vente</th>
+                            <th>Commission</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>28 mars</td>
+                            <td>T2 Centre-ville</td>
+                            <td>145 000 €</td>
+                            <td>4 350 €</td>
+                            <td><span class="status-badge qualified">Encaissée</span></td>
+                        </tr>
+                        <tr>
+                            <td>15 mars</td>
+                            <td>Maison Olivet</td>
+                            <td>320 000 €</td>
+                            <td>9 600 €</td>
+                            <td><span class="status-badge qualified">Encaissée</span></td>
+                        </tr>
+                        <tr>
+                            <td>8 mars</td>
+                            <td>T3 Saint-Marceau</td>
+                            <td>185 000 €</td>
+                            <td>5 550 €</td>
+                            <td><span class="status-badge in-progress">En attente</span></td>
+                        </tr>
+                        <tr>
+                            <td>22 fév</td>
+                            <td>T4 rue Royale</td>
+                            <td>275 000 €</td>
+                            <td>8 250 €</td>
+                            <td><span class="status-badge qualified">Encaissée</span></td>
+                        </tr>
+                        <tr>
+                            <td>10 fév</td>
+                            <td>Studio La Source</td>
+                            <td>95 000 €</td>
+                            <td>2 850 €</td>
+                            <td><span class="status-badge qualified">Encaissée</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Agent Social Page -->
+        <div class="page" id="page-agent-social">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2><i class="fas fa-share-nodes"></i> Agent Réseaux Sociaux</h2>
+                    <p class="page-subtitle">Création et publication automatique de contenu immobilier</p>
+                </div>
+                <div class="page-header-right">
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked id="toggle-social">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Actif</span>
+                </div>
+            </div>
+
+            <!-- Adaptation par plateforme -->
+            <div class="section-title">
+                <h3>Adaptation par plateforme</h3>
+                <p class="page-subtitle" style="margin-left:0;margin-top:0.2rem;font-size:0.75rem">L'IA adapte automatiquement le contenu pour maximiser la conversion sur chaque réseau</p>
+            </div>
+            <div class="config-grid" style="grid-template-columns: repeat(4, 1fr)">
+                <!-- Instagram -->
+                <div class="config-card platform-card">
+                    <div class="platform-header">
+                        <i class="fab fa-instagram" style="color:#E1306C;font-size:1.3rem"></i>
+                        <span class="source-status connected" style="font-size:0.65rem"><i class="fas fa-circle"></i> Connecté</span>
+                    </div>
+                    <h4 style="font-size:0.85rem;margin:0.5rem 0">Instagram</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Format privilégié</label>
+                            <select style="font-size:0.75rem">
+                                <option>Carrousel photos</option>
+                                <option>Reels vidéo</option>
+                                <option>Story</option>
+                                <option>Post unique</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ton</label>
+                            <select style="font-size:0.75rem">
+                                <option>Visuel & inspirant</option>
+                                <option>Fun & lifestyle</option>
+                                <option>Luxe & aspirationnel</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Audience cible</label>
+                            <span class="form-text" style="font-size:0.7rem">25-45 ans, primo-accédants, lifestyle</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Fréquence</label>
+                            <select style="font-size:0.75rem">
+                                <option>2 posts/jour</option>
+                                <option>1 post/jour</option>
+                                <option>3 posts/semaine</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- Facebook -->
+                <div class="config-card platform-card">
+                    <div class="platform-header">
+                        <i class="fab fa-facebook" style="color:#1877F2;font-size:1.3rem"></i>
+                        <span class="source-status connected" style="font-size:0.65rem"><i class="fas fa-circle"></i> Connecté</span>
+                    </div>
+                    <h4 style="font-size:0.85rem;margin:0.5rem 0">Facebook</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Format privilégié</label>
+                            <select style="font-size:0.75rem">
+                                <option>Article détaillé + photos</option>
+                                <option>Vidéo visite</option>
+                                <option>Album photos</option>
+                                <option>Événement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ton</label>
+                            <select style="font-size:0.75rem">
+                                <option>Informatif & convivial</option>
+                                <option>Professionnel</option>
+                                <option>Communautaire</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Audience cible</label>
+                            <span class="form-text" style="font-size:0.7rem">35-60 ans, familles, investisseurs locaux</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Fréquence</label>
+                            <select style="font-size:0.75rem">
+                                <option>1 post/jour</option>
+                                <option>2 posts/jour</option>
+                                <option>3 posts/semaine</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- LinkedIn -->
+                <div class="config-card platform-card">
+                    <div class="platform-header">
+                        <i class="fab fa-linkedin" style="color:#0A66C2;font-size:1.3rem"></i>
+                        <span class="source-status connected" style="font-size:0.65rem"><i class="fas fa-circle"></i> Connecté</span>
+                    </div>
+                    <h4 style="font-size:0.85rem;margin:0.5rem 0">LinkedIn</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Format privilégié</label>
+                            <select style="font-size:0.75rem">
+                                <option>Article expertise marché</option>
+                                <option>Étude de cas</option>
+                                <option>Carrousel conseil</option>
+                                <option>Post texte engageant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ton</label>
+                            <select style="font-size:0.75rem">
+                                <option>Expert & crédible</option>
+                                <option>Storytelling pro</option>
+                                <option>Data & insights</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Audience cible</label>
+                            <span class="form-text" style="font-size:0.7rem">Investisseurs, pros immo, cadres 30-55 ans</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Fréquence</label>
+                            <select style="font-size:0.75rem">
+                                <option>3 posts/semaine</option>
+                                <option>1 post/jour</option>
+                                <option>2 posts/semaine</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- TikTok -->
+                <div class="config-card platform-card" style="opacity:0.5">
+                    <div class="platform-header">
+                        <i class="fab fa-tiktok" style="color:#fff;font-size:1.3rem"></i>
+                        <span class="source-status disconnected" style="font-size:0.65rem"><i class="fas fa-circle"></i> Non connecté</span>
+                    </div>
+                    <h4 style="font-size:0.85rem;margin:0.5rem 0">TikTok</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Format privilégié</label>
+                            <select style="font-size:0.75rem" disabled>
+                                <option>Vidéo visite dynamique</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ton</label>
+                            <select style="font-size:0.75rem" disabled>
+                                <option>Fun & authentique</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Audience cible</label>
+                            <span class="form-text" style="font-size:0.7rem">18-30 ans, primo-accédants, curiosité</span>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn-gold btn-sm" style="width:100%;margin-top:0.3rem"><i class="fas fa-plug"></i> Connecter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenu global -->
+            <div class="config-grid">
+                <div class="config-card">
+                    <h4><i class="fas fa-wand-magic-sparkles"></i> Contenu global</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Hashtags par défaut</label>
+                            <div class="tag-list editable">
+                                <span class="config-tag">#immobilier <i class="fas fa-times"></i></span>
+                                <span class="config-tag">#orleans <i class="fas fa-times"></i></span>
+                                <span class="config-tag">#visitandsmile <i class="fas fa-times"></i></span>
+                                <span class="config-tag">#appartement <i class="fas fa-times"></i></span>
+                                <span class="config-tag">#maison <i class="fas fa-times"></i></span>
+                                <button class="btn-add-tag"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Types de contenu</label>
+                            <div class="checkbox-list">
+                                <label class="checkbox-item"><input type="checkbox" checked> Nouveau bien (photo + description)</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> Story visite virtuelle</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> Conseil acheteur / vendeur</label>
+                                <label class="checkbox-item"><input type="checkbox"> Témoignage client</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> Actualité marché Orléans</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Horaires optimaux</label>
+                            <div class="time-slots">
+                                <span class="time-slot active">9h00</span>
+                                <span class="time-slot active">12h30</span>
+                                <span class="time-slot">18h00</span>
+                                <span class="time-slot">20h00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ADS -->
+                <div class="config-card">
+                    <div class="platform-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+                        <h4 style="margin:0"><i class="fas fa-bullhorn"></i> Publicités (Ads)</h4>
+                        <div style="display:flex;align-items:center;gap:0.5rem">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-ads">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label" id="adsLabel" style="font-size:0.75rem;color:var(--red)">Inactif</span>
+                        </div>
+                    </div>
+                    <div class="ads-content" id="adsContent" style="opacity:0.4;pointer-events:none;transition:all 0.3s ease">
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label>Budget mensuel</label>
+                                <select>
+                                    <option>50 € / mois</option>
+                                    <option>100 € / mois</option>
+                                    <option>200 € / mois</option>
+                                    <option>500 € / mois</option>
+                                    <option>Budget personnalisé</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Plateformes Ads</label>
+                                <div class="checkbox-list">
+                                    <label class="checkbox-item"><input type="checkbox" checked> <i class="fab fa-facebook" style="color:#1877F2;margin-right:0.3rem"></i> Facebook Ads</label>
+                                    <label class="checkbox-item"><input type="checkbox" checked> <i class="fab fa-instagram" style="color:#E1306C;margin-right:0.3rem"></i> Instagram Ads</label>
+                                    <label class="checkbox-item"><input type="checkbox"> <i class="fab fa-linkedin" style="color:#0A66C2;margin-right:0.3rem"></i> LinkedIn Ads</label>
+                                    <label class="checkbox-item"><input type="checkbox"> <i class="fab fa-tiktok" style="margin-right:0.3rem"></i> TikTok Ads</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Objectif des campagnes</label>
+                                <select>
+                                    <option>Générer des contacts (leads)</option>
+                                    <option>Visibilité locale</option>
+                                    <option>Trafic vers le site</option>
+                                    <option>Engagement communauté</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Zone géographique</label>
+                                <select>
+                                    <option>Orléans + 20 km</option>
+                                    <option>Orléans centre</option>
+                                    <option>Loiret (45)</option>
+                                    <option>Région Centre-Val de Loire</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Performance Ads (estimée)</label>
+                                <div class="source-list">
+                                    <div class="source-item">
+                                        <span class="source-name">Coût par lead</span>
+                                        <span class="source-status connected">~3.50 €</span>
+                                    </div>
+                                    <div class="source-item">
+                                        <span class="source-name">Portée estimée</span>
+                                        <span class="source-status">8 000 — 15 000 / mois</span>
+                                    </div>
+                                    <div class="source-item">
+                                        <span class="source-name">Leads estimés</span>
+                                        <span class="source-status connected">15 — 30 / mois</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Stats -->
+            <div class="section-title">
+                <h3>Performance ce mois</h3>
+            </div>
+            <div class="perf-grid">
+                <div class="perf-card">
+                    <div class="perf-icon gold"><i class="fas fa-eye"></i></div>
+                    <div class="perf-value">18.7k</div>
+                    <div class="perf-label">Impressions totales</div>
+                    <div class="perf-change up"><i class="fas fa-arrow-up"></i> +34% vs mois dernier</div>
+                    <div class="progress-mini"><div class="progress-mini-fill gold" style="width: 78%"></div></div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-icon green"><i class="fas fa-heart"></i></div>
+                    <div class="perf-value">2 412</div>
+                    <div class="perf-label">Engagements (likes, commentaires)</div>
+                    <div class="perf-change up"><i class="fas fa-arrow-up"></i> +22% vs mois dernier</div>
+                    <div class="progress-mini"><div class="progress-mini-fill green" style="width: 65%"></div></div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-icon blue"><i class="fas fa-user-plus"></i></div>
+                    <div class="perf-value">+127</div>
+                    <div class="perf-label">Nouveaux abonnés</div>
+                    <div class="perf-change up"><i class="fas fa-arrow-up"></i> +15% vs mois dernier</div>
+                    <div class="progress-mini"><div class="progress-mini-fill gold" style="width: 52%"></div></div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-icon orange"><i class="fas fa-bullseye"></i></div>
+                    <div class="perf-value">4.8%</div>
+                    <div class="perf-label">Taux d'engagement</div>
+                    <div class="perf-change up"><i class="fas fa-arrow-up"></i> Excellent (moy: 2.1%)</div>
+                    <div class="progress-mini"><div class="progress-mini-fill green" style="width: 85%"></div></div>
+                </div>
+            </div>
+
+            <!-- Content Calendar -->
+            <div class="section-title">
+                <h3>Publications à venir</h3>
+                <button class="btn-gold btn-sm" id="btnNouveauPost"><i class="fas fa-plus"></i> Créer un post</button>
+            </div>
+            <div class="posts-grid">
+                <div class="post-card">
+                    <div class="post-preview">
+                        <div class="post-placeholder"><i class="fas fa-image"></i></div>
+                    </div>
+                    <div class="post-info">
+                        <span class="post-platform"><i class="fab fa-instagram"></i> Instagram</span>
+                        <span class="post-schedule"><i class="fas fa-clock"></i> Aujourd'hui 12h30</span>
+                    </div>
+                    <p class="post-caption">Coup de coeur ! Ce T3 lumineux de 65m² avec balcon plein sud à Saint-Marceau n'attend que vous...</p>
+                    <div class="post-actions">
+                        <button class="btn-sm btn-outline">Modifier</button>
+                        <button class="btn-sm btn-gold">Approuver</button>
+                    </div>
+                </div>
+                <div class="post-card">
+                    <div class="post-preview">
+                        <div class="post-placeholder"><i class="fas fa-image"></i></div>
+                    </div>
+                    <div class="post-info">
+                        <span class="post-platform"><i class="fab fa-facebook"></i> Facebook</span>
+                        <span class="post-schedule"><i class="fas fa-clock"></i> Demain 9h00</span>
+                    </div>
+                    <p class="post-caption">Le marché immobilier à Orléans en mars 2026 : les prix se stabilisent dans l'hyper-centre, opportunités à saisir dans le secteur La Source...</p>
+                    <div class="post-actions">
+                        <button class="btn-sm btn-outline">Modifier</button>
+                        <button class="btn-sm btn-gold">Approuver</button>
+                    </div>
+                </div>
+                <div class="post-card">
+                    <div class="post-preview">
+                        <div class="post-placeholder"><i class="fas fa-video"></i></div>
+                    </div>
+                    <div class="post-info">
+                        <span class="post-platform"><i class="fab fa-instagram"></i> Story</span>
+                        <span class="post-schedule"><i class="fas fa-clock"></i> Demain 12h30</span>
+                    </div>
+                    <p class="post-caption">Visite virtuelle — Maison 5 pièces avec jardin à Olivet, 320k€</p>
+                    <div class="post-actions">
+                        <button class="btn-sm btn-outline">Modifier</button>
+                        <button class="btn-sm btn-gold">Approuver</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Planning Page -->
+        <div class="page" id="page-agent-planning">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2><i class="fas fa-calendar-days"></i> Agent Planning & RDV</h2>
+                    <p class="page-subtitle">RDV, relances et relation client automatisés via email, SMS et Google Calendar</p>
+                </div>
+                <div class="page-header-right">
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked id="toggle-planning">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Actif</span>
+                </div>
+            </div>
+
+            <div class="config-grid">
+                <div class="config-card">
+                    <h4><i class="fas fa-plug"></i> Sources de rendez-vous</h4>
+                    <div class="source-list">
+                        <div class="source-item">
+                            <span class="source-name">Google Calendar</span>
+                            <span class="source-status connected"><i class="fas fa-circle"></i> Connecté</span>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">Gmail</span>
+                            <span class="source-status connected"><i class="fas fa-circle"></i> Connecté</span>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">Outlook</span>
+                            <span class="source-status disconnected"><i class="fas fa-circle"></i> Non connecté</span>
+                        </div>
+                        <button class="btn-gold btn-sm"><i class="fas fa-plus"></i> Ajouter une source</button>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-brain"></i> Comportement de l'agent</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Créneaux disponibles</label>
+                            <div class="time-range">
+                                <input type="time" value="09:00"> à <input type="time" value="19:00">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Durée par défaut d'un RDV</label>
+                            <select>
+                                <option>1 heure</option>
+                                <option>30 minutes</option>
+                                <option>1h30</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmation automatique</label>
+                            <select>
+                                <option>Par email + SMS</option>
+                                <option>Par email</option>
+                                <option>Par SMS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Rappel avant RDV</label>
+                            <select>
+                                <option>1h avant + la veille</option>
+                                <option>La veille</option>
+                                <option>2h avant</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Calendar -->
+            <div class="mini-calendar-section">
+                <div class="mini-calendar-card">
+                    <div class="mini-cal-header">
+                        <button class="mini-cal-nav" id="calPrev"><i class="fas fa-chevron-left"></i></button>
+                        <h4 id="calMonthLabel">Avril 2026</h4>
+                        <button class="mini-cal-nav" id="calNext"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="mini-cal-weekdays">
+                        <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+                    </div>
+                    <div class="mini-cal-days" id="calDays"></div>
+                </div>
+                <div class="mini-cal-agenda" id="calAgenda">
+                    <div class="mini-cal-agenda-header">
+                        <i class="fas fa-calendar-day"></i>
+                        <span id="calAgendaDate">Aujourd'hui</span>
+                    </div>
+                    <div class="mini-cal-agenda-list" id="calAgendaList">
+                        <p class="mini-cal-empty">Sélectionnez un jour pour voir les RDV</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Appointments -->
+            <div class="section-title">
+                <h3>Rendez-vous à venir</h3>
+                <button class="btn-gold btn-sm" id="btnNouveauRDV"><i class="fas fa-plus"></i> Nouveau RDV</button>
+            </div>
+            <div class="conversations-list">
+                <div class="conversation-item">
+                    <div class="conv-avatar">MD</div>
+                    <div class="conv-info">
+                        <div class="conv-header">
+                            <span class="conv-name">Marie Dupont</span>
+                            <span class="conv-source">Google Calendar</span>
+                            <span class="conv-time">Demain 14h30</span>
+                        </div>
+                        <p class="conv-preview">Visite T3 Saint-Marceau — 65m², 185 000€</p>
+                        <div class="conv-tags">
+                            <span class="tag qualified">Confirmé</span>
+                            <span class="tag">Visite</span>
+                            <span class="tag">14h30</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="conversation-item">
+                    <div class="conv-avatar">JP</div>
+                    <div class="conv-info">
+                        <div class="conv-header">
+                            <span class="conv-name">Jean Petit</span>
+                            <span class="conv-source">Gmail</span>
+                            <span class="conv-time">Vendredi 10h00</span>
+                        </div>
+                        <p class="conv-preview">Visite T2 Centre-ville — 42m², 145 000€</p>
+                        <div class="conv-tags">
+                            <span class="tag rdv">Confirmé par email</span>
+                            <span class="tag">Visite</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="conversation-item">
+                    <div class="conv-avatar">PL</div>
+                    <div class="conv-info">
+                        <div class="conv-header">
+                            <span class="conv-name">Paul Leblanc</span>
+                            <span class="conv-source">Gmail</span>
+                            <span class="conv-time">Vendredi 15h00</span>
+                        </div>
+                        <p class="conv-preview">Rendez-vous signature compromis — T4 Olivet</p>
+                        <div class="conv-tags">
+                            <span class="tag in-progress">En attente confirmation</span>
+                            <span class="tag">Signature</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Séquences de relance -->
+            <div class="section-title">
+                <h3>Séquences de relance</h3>
+                <button class="btn-gold btn-sm"><i class="fas fa-plus"></i> Nouvelle séquence</button>
+            </div>
+            <div class="config-grid">
+                <div class="config-card">
+                    <div class="sequences-list">
+                        <div class="sequence-item">
+                            <div class="sequence-header">
+                                <span class="sequence-name">Post-visite</span>
+                                <span class="sequence-badge active-badge">Active</span>
+                            </div>
+                            <div class="sequence-steps">
+                                <div class="step">J+1 : Email feedback visite</div>
+                                <div class="step">J+3 : SMS rappel si pas de retour</div>
+                                <div class="step">J+7 : Email nouvelles propositions</div>
+                                <div class="step">J+14 : Appel (transfert Alison)</div>
+                            </div>
+                        </div>
+                        <div class="sequence-item">
+                            <div class="sequence-header">
+                                <span class="sequence-name">Lead froid</span>
+                                <span class="sequence-badge active-badge">Active</span>
+                            </div>
+                            <div class="sequence-steps">
+                                <div class="step">J+5 : Email "Toujours en recherche ?"</div>
+                                <div class="step">J+15 : Email nouveautés du secteur</div>
+                                <div class="step">J+30 : SMS dernière tentative</div>
+                            </div>
+                        </div>
+                        <div class="sequence-item">
+                            <div class="sequence-header">
+                                <span class="sequence-name">Après-vente</span>
+                                <span class="sequence-badge active-badge">Active</span>
+                            </div>
+                            <div class="sequence-steps">
+                                <div class="step">J+1 : Email félicitations + avis Google</div>
+                                <div class="step">J+30 : Email "Comment se passe l'installation ?"</div>
+                                <div class="step">J+90 : Demande de recommandation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-gift"></i> Messages occasions spéciales</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Messages automatiques activés</label>
+                            <div class="checkbox-list">
+                                <label class="checkbox-item"><input type="checkbox" checked> <i class="fas fa-birthday-cake" style="color:var(--gold);margin-right:0.3rem"></i> Anniversaire du client</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> <i class="fas fa-tree" style="color:var(--green);margin-right:0.3rem"></i> Joyeux Noël</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> <i class="fas fa-champagne-glasses" style="color:var(--gold);margin-right:0.3rem"></i> Bonne année</label>
+                                <label class="checkbox-item"><input type="checkbox" checked> <i class="fas fa-home" style="color:var(--blue);margin-right:0.3rem"></i> Anniversaire d'achat (1 an)</label>
+                                <label class="checkbox-item"><input type="checkbox"> <i class="fas fa-heart" style="color:var(--red);margin-right:0.3rem"></i> Saint-Valentin</label>
+                                <label class="checkbox-item"><input type="checkbox"> <i class="fas fa-sun" style="color:var(--orange);margin-right:0.3rem"></i> Bonnes vacances d'été</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Canal d'envoi</label>
+                            <select>
+                                <option>Email personnalisé</option>
+                                <option>SMS</option>
+                                <option>Email + SMS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prochains envois programmés</label>
+                            <div class="source-list">
+                                <div class="source-item">
+                                    <span class="source-name"><i class="fas fa-birthday-cake" style="color:var(--gold);margin-right:0.4rem"></i> Anniversaire Marie Dupont</span>
+                                    <span class="source-status connected">12 avril</span>
+                                </div>
+                                <div class="source-item">
+                                    <span class="source-name"><i class="fas fa-birthday-cake" style="color:var(--gold);margin-right:0.4rem"></i> Anniversaire Paul Leblanc</span>
+                                    <span class="source-status connected">28 avril</span>
+                                </div>
+                                <div class="source-item">
+                                    <span class="source-name"><i class="fas fa-home" style="color:var(--blue);margin-right:0.4rem"></i> 1 an d'achat — Anne Richard</span>
+                                    <span class="source-status connected">3 mai</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients Page -->
+        <div class="page" id="page-clients">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2><i class="fas fa-address-book"></i> Clients</h2>
+                    <p class="page-subtitle">Acheteurs et vendeurs suivis par les agents</p>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn-outline btn-sm" id="btnExportClients"><i class="fas fa-download"></i> Export clients</button>
+                    <button class="btn-gold" id="btnNouveauClient"><i class="fas fa-plus"></i> Ajouter un client</button>
+                </div>
+            </div>
+            <div class="contacts-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Type</th>
+                            <th>Bien concerné</th>
+                            <th>Budget/Prix</th>
+                            <th>Statut</th>
+                            <th>Dernière action</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Marie Dupont</strong></td>
+                            <td>Acheteuse</td>
+                            <td>T3 Saint-Marceau</td>
+                            <td>180 000 €</td>
+                            <td><span class="status-badge qualified">Visite RDV</span></td>
+                            <td>Demain 14h30</td>
+                            <td><button class="btn-sm btn-outline btn-client-view"><i class="fas fa-eye"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jean Petit</strong></td>
+                            <td>Acheteur</td>
+                            <td>T2 Centre-ville</td>
+                            <td>155 000 €</td>
+                            <td><span class="status-badge visit">RDV vendredi</span></td>
+                            <td>Email reçu</td>
+                            <td><button class="btn-sm btn-outline btn-client-view"><i class="fas fa-eye"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Paul Leblanc</strong></td>
+                            <td>Acheteur</td>
+                            <td>T4 Olivet</td>
+                            <td>250 000 €</td>
+                            <td><span class="status-badge hot">Signature</span></td>
+                            <td>Compromis vendredi</td>
+                            <td><button class="btn-sm btn-outline btn-client-view"><i class="fas fa-eye"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sophie Laurent</strong></td>
+                            <td>Vendeuse</td>
+                            <td>Maison La Source</td>
+                            <td>320 000 €</td>
+                            <td><span class="status-badge in-progress">Estimation</span></td>
+                            <td>Il y a 2h</td>
+                            <td><button class="btn-sm btn-outline btn-client-view"><i class="fas fa-eye"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Anne Richard</strong></td>
+                            <td>Acheteuse</td>
+                            <td>Maison Olivet</td>
+                            <td>295 000 €</td>
+                            <td><span class="status-badge offer">Offre acceptée</span></td>
+                            <td>Hier</td>
+                            <td><button class="btn-sm btn-outline btn-client-view"><i class="fas fa-eye"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div class="page" id="page-settings">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h2><i class="fas fa-gear"></i> Paramètres</h2>
+                    <p class="page-subtitle">Configuration générale de Deadpool IA</p>
+                </div>
+                <button class="btn-gold" id="btnSaveSettings"><i class="fas fa-save"></i> Sauvegarder</button>
+            </div>
+            <div class="config-grid">
+                <div class="config-card">
+                    <h4><i class="fas fa-user"></i> Informations personnelles</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Nom complet</label>
+                            <input type="text" value="Alison Mendes" class="form-input" id="settingName">
+                        </div>
+                        <div class="form-group">
+                            <label>Nom de l'activité</label>
+                            <input type="text" value="Visit & Smile" class="form-input" id="settingBusiness">
+                        </div>
+                        <div class="form-group">
+                            <label>Ville</label>
+                            <input type="text" value="Orléans" class="form-input" id="settingCity">
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            <input type="tel" placeholder="02 38 XX XX XX" class="form-input" id="settingPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Email professionnel</label>
+                            <input type="email" value="alison@visitandsmile.fr" class="form-input" id="settingEmail" disabled>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-calculator"></i> Comptabilité</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Régime fiscal</label>
+                            <select class="form-input" id="settingFiscal">
+                                <option value="micro-entrepreneur" selected>Micro-entrepreneur</option>
+                                <option value="reel-simplifie">Réel simplifié</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Taux URSSAF (%)</label>
+                            <input type="number" value="22" step="0.1" class="form-input" id="settingUrssaf">
+                        </div>
+                        <div class="form-group">
+                            <label>Taux de commission par défaut (%)</label>
+                            <select class="form-input" id="settingCommission">
+                                <option value="3" selected>3%</option>
+                                <option value="4">4%</option>
+                                <option value="5">5%</option>
+                                <option value="6">6%</option>
+                                <option value="7">7%</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Résumé hebdomadaire</label>
+                            <select class="form-input" id="settingWeeklyDay">
+                                <option value="monday" selected>Lundi matin</option>
+                                <option value="friday">Vendredi soir</option>
+                                <option value="disabled">Désactivé</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-plug"></i> Connexions API</h4>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>Webhook n8n</label>
+                            <input type="text" placeholder="https://n8n.votredomaine.com" class="form-input" id="settingN8n">
+                        </div>
+                        <div class="form-group">
+                            <label>Statut n8n</label>
+                            <span class="source-status disconnected" id="n8nStatus"><i class="fas fa-circle"></i> Non configuré</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Google Calendar</label>
+                            <span class="source-status connected"><i class="fas fa-circle"></i> Connecté</span>
+                        </div>
+                        <div class="form-group">
+                            <label>SendGrid (Emails)</label>
+                            <span class="source-status connected"><i class="fas fa-circle"></i> Connecté</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Twilio (SMS)</label>
+                            <span class="source-status connected"><i class="fas fa-circle"></i> Connecté</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-card">
+                    <h4><i class="fas fa-bell"></i> Notifications</h4>
+                    <div class="config-form">
+                        <div class="checkbox-list">
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifClient"> Nouveau client qualifié</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifRDV"> RDV planifié</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifPost"> Post à approuver</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifDeclaration"> Rappel déclaration URSSAF</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifMotivation"> Message de motivation quotidien</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifRelance"> Relances automatiques</label>
+                            <label class="checkbox-item"><input type="checkbox" checked id="notifBirthday"> Anniversaires clients</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Nouvelle Vente -->
+    <div class="modal-overlay" id="modalVente">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Enregistrer une vente</h3>
+                <button class="modal-close" id="modalVenteClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="modal-form" id="formVente">
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Date de la vente</label>
+                        <input type="date" class="form-input" value="2026-04-03">
+                    </div>
+                    <div class="form-group">
+                        <label>Client</label>
+                        <input type="text" class="form-input" placeholder="Nom du client">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Bien vendu</label>
+                    <input type="text" class="form-input" placeholder="Ex: T3 lumineux — Saint-Marceau">
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Prix de vente</label>
+                        <input type="text" class="form-input" id="inputPrixVente" placeholder="185 000 €">
+                    </div>
+                    <div class="form-group">
+                        <label>Taux de commission</label>
+                        <select class="form-input" id="inputTauxComm">
+                            <option value="3">3%</option>
+                            <option value="4">4%</option>
+                            <option value="5" selected>5%</option>
+                            <option value="6">6%</option>
+                            <option value="7">7%</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Commission calculée</label>
+                        <div class="commission-result" id="commissionResult">—</div>
+                    </div>
+                    <div class="form-group">
+                        <label>URSSAF estimé (22%)</label>
+                        <div class="commission-result urssaf" id="urssafResult">—</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes (optionnel)</label>
+                    <input type="text" class="form-input" placeholder="Ex: Vente rapide, acheteur cash...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-sm btn-outline" id="modalVenteCancel">Annuler</button>
+                    <button type="submit" class="btn-gold">
+                        <i class="fas fa-check"></i> Enregistrer la vente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nouveau Post -->
+    <div class="modal-overlay" id="modalPost">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-pen-fancy"></i> Créer un post</h3>
+                <button class="modal-close" id="modalPostClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="modal-form" id="formPost">
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Plateforme</label>
+                        <select class="form-input" id="postPlatform">
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="linkedin">LinkedIn</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date de publication</label>
+                        <input type="datetime-local" class="form-input" id="postSchedule">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Contenu du post</label>
+                    <textarea class="form-input" id="postContent" rows="4" placeholder="Écrivez votre post ou utilisez l'IA pour le générer..." style="resize:vertical;font-family:var(--font-body)"></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn-sm btn-outline" id="btnGenerateAI" style="width:100%;border-color:var(--gold-dim);color:var(--gold)">
+                        <i class="fas fa-wand-magic-sparkles"></i> Générer avec Deadpool IA
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Hashtags</label>
+                    <input type="text" class="form-input" id="postHashtags" placeholder="#immobilier #orleans #visitandsmile">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-sm btn-outline" id="modalPostCancel">Annuler</button>
+                    <button type="submit" class="btn-gold"><i class="fas fa-calendar-plus"></i> Programmer le post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nouveau Client -->
+    <div class="modal-overlay" id="modalClient">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Ajouter un client</h3>
+                <button class="modal-close" id="modalClientClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="modal-form" id="formClient">
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Prénom</label>
+                        <input type="text" class="form-input" id="clientFirstName" placeholder="Prénom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" class="form-input" id="clientLastName" placeholder="Nom" required>
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-input" id="clientEmail" placeholder="email@exemple.fr">
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="tel" class="form-input" id="clientPhone" placeholder="06 XX XX XX XX">
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select class="form-input" id="clientType">
+                            <option value="buyer">Acheteur</option>
+                            <option value="seller">Vendeur</option>
+                            <option value="both">Acheteur & Vendeur</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Budget / Prix</label>
+                        <input type="text" class="form-input" id="clientBudget" placeholder="200 000 €">
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Bien concerné</label>
+                        <input type="text" class="form-input" id="clientProperty" placeholder="T3 Saint-Marceau">
+                    </div>
+                    <div class="form-group">
+                        <label>Date d'anniversaire</label>
+                        <input type="date" class="form-input" id="clientBirthday">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input type="text" class="form-input" id="clientNotes" placeholder="Informations complémentaires...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-sm btn-outline" id="modalClientCancel">Annuler</button>
+                    <button type="submit" class="btn-gold"><i class="fas fa-check"></i> Ajouter le client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nouveau RDV -->
+    <div class="modal-overlay" id="modalRDV">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-plus"></i> Planifier un rendez-vous</h3>
+                <button class="modal-close" id="modalRDVClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="modal-form" id="formRDV">
+                <div class="form-group">
+                    <label>Titre</label>
+                    <input type="text" class="form-input" id="rdvTitle" placeholder="Ex: Visite T3 Saint-Marceau" required>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Date & heure début</label>
+                        <input type="datetime-local" class="form-input" id="rdvStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date & heure fin</label>
+                        <input type="datetime-local" class="form-input" id="rdvEnd">
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Type de RDV</label>
+                        <select class="form-input" id="rdvType">
+                            <option value="visit">Visite</option>
+                            <option value="signing">Signature</option>
+                            <option value="estimation">Estimation</option>
+                            <option value="follow_up">Suivi</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Lieu</label>
+                        <input type="text" class="form-input" id="rdvLocation" placeholder="Adresse du bien...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" class="form-input" id="rdvDescription" placeholder="Détails du rendez-vous...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-sm btn-outline" id="modalRDVCancel">Annuler</button>
+                    <button type="submit" class="btn-gold"><i class="fas fa-calendar-check"></i> Planifier le RDV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Détail Client -->
+    <div class="modal-overlay" id="modalClientDetail">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-user"></i> <span id="clientDetailName">Client</span></h3>
+                <button class="modal-close" id="modalClientDetailClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="clientDetailBody">
+                <div class="client-detail-grid">
+                    <div class="client-detail-info">
+                        <div class="client-detail-avatar" id="clientDetailAvatar">MD</div>
+                        <div class="client-detail-meta">
+                            <div class="form-group">
+                                <label>Type</label>
+                                <span id="clientDetailType" class="detail-value">—</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <span id="clientDetailEmail" class="detail-value">—</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Téléphone</label>
+                                <span id="clientDetailPhone" class="detail-value">—</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Anniversaire</label>
+                                <span id="clientDetailBirthday" class="detail-value">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="client-detail-stats">
+                        <div class="form-group">
+                            <label>Bien concerné</label>
+                            <span id="clientDetailProperty" class="detail-value">—</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Budget</label>
+                            <span id="clientDetailBudget" class="detail-value">—</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Statut</label>
+                            <span id="clientDetailStatus" class="detail-value">—</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <span id="clientDetailNotes" class="detail-value">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-sm btn-outline" id="btnClientEmail"><i class="fas fa-envelope"></i> Envoyer un email</button>
+                <button type="button" class="btn-sm btn-outline" id="btnClientRDV"><i class="fas fa-calendar-plus"></i> Planifier un RDV</button>
+                <button type="button" class="btn-sm btn-gold" id="btnClientEdit"><i class="fas fa-edit"></i> Modifier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div class="notif-panel" id="notifPanel">
+        <div class="notif-header">
+            <h3>Notifications</h3>
+            <button class="btn-sm btn-outline">Tout marquer lu</button>
+        </div>
+        <div class="notif-list">
+            <div class="notif-item unread">
+                <div class="notif-icon leads"><i class="fas fa-calculator"></i></div>
+                <div class="notif-content">
+                    <p><strong>Rappel URSSAF</strong></p>
+                    <p>Déclaration Q2 à envoyer avant le 15 avril</p>
+                    <span class="notif-time">Il y a 3 min</span>
+                </div>
+            </div>
+            <div class="notif-item unread">
+                <div class="notif-icon followup"><i class="fas fa-calendar-check"></i></div>
+                <div class="notif-content">
+                    <p><strong>RDV confirmé</strong></p>
+                    <p>Marie Dupont — T3 Saint-Marceau, demain 14h30</p>
+                    <span class="notif-time">Il y a 10 min</span>
+                </div>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon social"><i class="fas fa-check-circle"></i></div>
+                <div class="notif-content">
+                    <p><strong>Post prêt à publier</strong></p>
+                    <p>T3 Saint-Marceau — Instagram 12h30</p>
+                    <span class="notif-time">Il y a 1h</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Chatbot Deadpool IA -->
+    <button class="chatbot-toggle" id="chatbotToggle">
+        <span class="pulse-ring"></span>
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="chatbot-panel" id="chatbotPanel">
+        <div class="chatbot-header">
+            <div class="chatbot-header-icon"><i class="fas fa-robot"></i></div>
+            <div class="chatbot-header-info">
+                <h4>Deadpool IA</h4>
+                <span>En ligne</span>
+            </div>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="chat-msg bot">Salut Alison ! Je suis Deadpool IA, ton assistant personnel. Comment je peux t'aider aujourd'hui ? 🤖</div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatInput" placeholder="Écrire un message...">
+            <button id="chatSend"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Onboarding Tour -->
+    <!-- Command Palette -->
+    <div class="cmd-palette-overlay" id="commandPalette">
+        <div class="cmd-palette">
+            <div class="cmd-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="cmdInput" placeholder="Rechercher une commande..." autocomplete="off">
+                <kbd>ESC</kbd>
+            </div>
+            <div class="cmd-results" id="cmdResults"></div>
+            <div class="cmd-footer">
+                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> naviguer</span>
+                <span><kbd>Enter</kbd> sélectionner</span>
+                <span><kbd>Esc</kbd> fermer</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="onboarding-overlay" id="onboardingOverlay">
+        <div class="onboarding-spotlight" id="onboardingSpotlight"></div>
+        <div class="onboarding-tooltip" id="onboardingTooltip">
+            <div class="onboarding-step-counter" id="onboardingCounter">1/6</div>
+            <h4 id="onboardingTitle">Bienvenue Alison !</h4>
+            <p id="onboardingText">Faisons un tour rapide de ton nouvel assistant Deadpool IA.</p>
+            <div class="onboarding-actions">
+                <button class="btn-sm btn-outline" id="onboardingSkip">Passer le tour</button>
+                <button class="btn-sm btn-gold" id="onboardingNext"><i class="fas fa-arrow-right"></i> Suivant</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Offline Indicator -->
+    <div class="offline-banner" id="offlineBanner">
+        <i class="fas fa-wifi-slash"></i> Mode hors-ligne — Les modifications seront synchronisées au retour de la connexion
+    </div>
+
+    <!-- Modal Modifier Client -->
+    <div class="modal-overlay" id="modalEditClient">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Modifier le client</h3>
+                <button class="modal-close" id="modalEditClientClose"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="modal-form" id="formEditClient">
+                <input type="hidden" id="editClientId">
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Prénom</label>
+                        <input type="text" class="form-input" id="editClientFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" class="form-input" id="editClientLastName" required>
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-input" id="editClientEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="tel" class="form-input" id="editClientPhone">
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select class="form-input" id="editClientType">
+                            <option value="buyer">Acheteur</option>
+                            <option value="seller">Vendeur</option>
+                            <option value="both">Acheteur/Vendeur</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Statut</label>
+                        <select class="form-input" id="editClientStatus">
+                            <option value="active">Actif</option>
+                            <option value="prospect">Prospect</option>
+                            <option value="closed">Clôturé</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Bien concerné</label>
+                        <input type="text" class="form-input" id="editClientProperty">
+                    </div>
+                    <div class="form-group">
+                        <label>Budget</label>
+                        <input type="text" class="form-input" id="editClientBudget">
+                    </div>
+                </div>
+                <div class="modal-grid">
+                    <div class="form-group">
+                        <label>Anniversaire</label>
+                        <input type="date" class="form-input" id="editClientBirthday">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" class="form-input" id="editClientNotes">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-sm btn-outline" id="modalEditClientCancel">Annuler</button>
+                    <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(r => console.log('SW registered')).catch(e => console.warn('SW failed:', e));
+        }
+    </script>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

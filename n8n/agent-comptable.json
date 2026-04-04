@@ -1,0 +1,218 @@
+{
+  "name": "Deadpool IA — Agent Comptable",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * 1" }]
+        }
+      },
+      "name": "Cron Lundi 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "id": "cron-weekly"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_dashboard_stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_user_id", "value": "={{ $env.ALISON_USER_ID }}" }
+          ]
+        }
+      },
+      "name": "Get Stats Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "id": "get-stats"
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-haiku-latest",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Tu es Deadpool IA, l'assistant IA d'Alison Mendes, auto-entrepreneuse immobilière chez Visit & Smile à Orléans. Tu envoies un résumé hebdomadaire motivant et professionnel de ses performances. Sois encourageant, utilise des emojis avec modération. Format: email court, structuré, avec les chiffres clés."
+            },
+            {
+              "role": "user",
+              "content": "Génère le résumé hebdomadaire pour Alison avec ces stats : CA du mois = {{ $json.ca_month }}€, Ventes du mois = {{ $json.sales_month }}, Bénéfice net = {{ $json.total_net }}€, Marge = {{ $json.margin_rate }}%. Compare avec le mois précédent : CA = {{ $json.ca_prev_month }}€, Ventes = {{ $json.sales_prev_month }}."
+            }
+          ]
+        }
+      },
+      "name": "Claude IA Résumé",
+      "type": "n8n-nodes-base.anthropic",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "claude-resume",
+      "credentials": { "anthropicApi": { "id": "anthropic-key", "name": "Anthropic API" } }
+    },
+    {
+      "parameters": {
+        "fromEmail": "deadpool@visitandsmile.fr",
+        "toEmail": "alison@visitandsmile.fr",
+        "subject": "📊 Deadpool IA — Ton résumé de la semaine",
+        "text": "={{ $json.content[0].text }}",
+        "options": {}
+      },
+      "name": "Envoyer Email Résumé",
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "send-resume",
+      "credentials": { "sendGridApi": { "id": "sendgrid-key", "name": "SendGrid API" } }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "name": "Cron Quotidien 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 520],
+      "id": "cron-daily"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/declarations?due_date=lte.{{ $today.plus(3, 'days').toISODate() }}&status=eq.pending&reminder_sent=eq.false",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Check Declarations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 520],
+      "id": "check-declarations"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            { "leftValue": "={{ $json.length }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }
+          ]
+        }
+      },
+      "name": "Has Declarations?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 520],
+      "id": "if-declarations"
+    },
+    {
+      "parameters": {
+        "fromEmail": "deadpool@visitandsmile.fr",
+        "toEmail": "alison@visitandsmile.fr",
+        "subject": "⚠️ Rappel — Déclaration {{ $json.label }} dans 3 jours",
+        "text": "Salut Alison ! 👋\n\nDeadpool IA te rappelle que ta {{ $json.label }} est due le {{ $json.due_date }}.\n\nN'oublie pas de la faire avant la date limite !\n\n🤖 Deadpool IA — Visit & Smile"
+      },
+      "name": "Email Rappel Déclaration",
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [900, 520],
+      "id": "send-reminder",
+      "credentials": { "sendGridApi": { "id": "sendgrid-key", "name": "SendGrid API" } }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/declarations?id=eq.{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{ \"reminder_sent\": true }"
+      },
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 520],
+      "id": "mark-sent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-sale",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook Nouvelle Vente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 740],
+      "id": "webhook-sale",
+      "webhookId": "new-sale"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{ \"user_id\": \"{{ $json.body.user_id }}\", \"agent\": \"compta\", \"icon\": \"fa-chart-line\", \"message\": \"<strong>Vente enregistrée</strong> — {{ $json.body.property_name }} vendu {{ $json.body.sale_price }}€, commission {{ $json.body.commission_amount }}€\" }"
+      },
+      "name": "Log Activity Vente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 740],
+      "id": "log-activity-sale"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"success\": true }"
+      },
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 740],
+      "id": "respond-ok"
+    }
+  ],
+  "connections": {
+    "Cron Lundi 9h": { "main": [[{ "node": "Get Stats Supabase", "type": "main", "index": 0 }]] },
+    "Get Stats Supabase": { "main": [[{ "node": "Claude IA Résumé", "type": "main", "index": 0 }]] },
+    "Claude IA Résumé": { "main": [[{ "node": "Envoyer Email Résumé", "type": "main", "index": 0 }]] },
+    "Cron Quotidien 8h": { "main": [[{ "node": "Check Declarations", "type": "main", "index": 0 }]] },
+    "Check Declarations": { "main": [[{ "node": "Has Declarations?", "type": "main", "index": 0 }]] },
+    "Has Declarations?": { "main": [[{ "node": "Email Rappel Déclaration", "type": "main", "index": 0 }], []] },
+    "Email Rappel Déclaration": { "main": [[{ "node": "Mark Reminder Sent", "type": "main", "index": 0 }]] },
+    "Webhook Nouvelle Vente": { "main": [[{ "node": "Log Activity Vente", "type": "main", "index": 0 }]] },
+    "Log Activity Vente": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Agent Comptable" }]
+}

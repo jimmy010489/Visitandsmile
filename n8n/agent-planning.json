@@ -1,0 +1,270 @@
+{
+  "name": "Deadpool IA — Agent Planning & RDV",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-appointment",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook Nouveau RDV",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "id": "webhook-rdv",
+      "webhookId": "new-appointment"
+    },
+    {
+      "parameters": {
+        "calendarId": "primary",
+        "start": "={{ $json.body.start_time }}",
+        "end": "={{ $json.body.end_time }}",
+        "summary": "={{ $json.body.title }}",
+        "description": "={{ $json.body.description || '' }}\n\nCréé par Deadpool IA 🤖",
+        "location": "={{ $json.body.location || '' }}",
+        "additionalFields": {
+          "reminders": {
+            "useDefault": false,
+            "overrides": [
+              { "method": "popup", "minutes": 60 },
+              { "method": "email", "minutes": 1440 }
+            ]
+          }
+        }
+      },
+      "name": "Créer Event Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [460, 300],
+      "id": "create-gcal",
+      "credentials": { "googleCalendarOAuth2Api": { "id": "gcal-key", "name": "Google Calendar" } }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/appointments?id=eq.{{ $json.body.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{ \"google_event_id\": \"{{ $node['Créer Event Google Calendar'].json.id }}\", \"status\": \"confirmed\" }"
+      },
+      "name": "Update RDV Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "update-rdv"
+    },
+    {
+      "parameters": {
+        "fromEmail": "deadpool@visitandsmile.fr",
+        "toEmail": "={{ $json.body.client_email || 'alison@visitandsmile.fr' }}",
+        "subject": "✅ RDV confirmé — {{ $json.body.title }}",
+        "text": "Bonjour,\n\nVotre rendez-vous avec Visit & Smile est confirmé :\n\n📅 {{ $json.body.title }}\n🕐 {{ $json.body.start_time }}\n📍 {{ $json.body.location || 'À définir' }}\n\nÀ bientôt !\n\n🤖 Deadpool IA — Visit & Smile"
+      },
+      "name": "Email Confirmation Client",
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [680, 480],
+      "id": "email-confirm",
+      "credentials": { "sendGridApi": { "id": "sendgrid-key", "name": "SendGrid API" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"success\": true, \"google_event_id\": \"{{ $node['Créer Event Google Calendar'].json.id }}\" }"
+      },
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [900, 300],
+      "id": "respond-ok-rdv"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "name": "Cron Rappels RDV 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 660],
+      "id": "cron-rdv-reminder"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/appointments?start_time=gte.{{ $today.toISODate() }}T00:00:00&start_time=lte.{{ $today.toISODate() }}T23:59:59&status=neq.cancelled&reminder_sent=eq.false&select=*,clients(first_name,last_name,phone,email)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get RDV Today",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 660],
+      "id": "get-rdv-today"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            { "leftValue": "={{ $json.length }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }
+          ]
+        }
+      },
+      "name": "Has RDV?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 660],
+      "id": "if-rdv"
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_PHONE }}",
+        "to": "={{ $json.clients.phone }}",
+        "message": "Bonjour {{ $json.clients.first_name }} ! Rappel : votre RDV avec Visit & Smile est aujourd'hui. {{ $json.title }}. À tout à l'heure ! 😊 — Deadpool IA"
+      },
+      "name": "SMS Rappel Client",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [900, 660],
+      "id": "sms-rappel",
+      "credentials": { "twilioApi": { "id": "twilio-key", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }]
+        }
+      },
+      "name": "Cron Anniversaires 7h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 880],
+      "id": "cron-birthday"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/clients?select=*&birthday=not.is.null",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get All Clients Birthdays",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 880],
+      "id": "get-birthdays"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\nconst todayStr = `${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;\n\nconst birthdayClients = [];\nfor (const item of $input.all()) {\n  const d = item.json;\n  if (d.birthday) {\n    const bday = d.birthday.substring(5); // MM-DD\n    if (bday === todayStr) {\n      birthdayClients.push(d);\n    }\n  }\n}\n\nreturn birthdayClients.map(c => ({ json: c }));"
+      },
+      "name": "Filter Today Birthdays",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 880],
+      "id": "filter-birthdays"
+    },
+    {
+      "parameters": {
+        "fromEmail": "deadpool@visitandsmile.fr",
+        "toEmail": "={{ $json.email }}",
+        "subject": "🎂 Joyeux anniversaire {{ $json.first_name }} !",
+        "text": "Cher(e) {{ $json.first_name }},\n\nToute l'équipe Visit & Smile vous souhaite un très joyeux anniversaire ! 🎂🎉\n\nQue cette journée soit remplie de bonheur et de belles surprises.\n\nÀ très bientôt !\n\n🤖 Deadpool IA — Visit & Smile\nAlison Mendes"
+      },
+      "name": "Email Anniversaire",
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [900, 880],
+      "id": "email-birthday",
+      "credentials": { "sendGridApi": { "id": "sendgrid-key", "name": "SendGrid API" } }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        }
+      },
+      "name": "Cron Relances 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 1100],
+      "id": "cron-relances"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/appointments?status=eq.completed&select=*,clients(first_name,last_name,email,phone)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get Completed Visits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 1100],
+      "id": "get-completed"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst relances = [];\n\nfor (const item of $input.all()) {\n  const visit = item.json;\n  const visitDate = new Date(visit.start_time);\n  const daysSince = Math.floor((now - visitDate) / (1000*60*60*24));\n\n  // J+1 : feedback\n  if (daysSince === 1) {\n    relances.push({ ...visit, relance_type: 'feedback', delay: 'J+1' });\n  }\n  // J+3 : rappel SMS\n  if (daysSince === 3) {\n    relances.push({ ...visit, relance_type: 'sms_rappel', delay: 'J+3' });\n  }\n  // J+7 : nouvelles propositions\n  if (daysSince === 7) {\n    relances.push({ ...visit, relance_type: 'nouvelles_propositions', delay: 'J+7' });\n  }\n}\n\nreturn relances.map(r => ({ json: r }));"
+      },
+      "name": "Calc Relances Timing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 1100],
+      "id": "calc-relances"
+    },
+    {
+      "parameters": {
+        "fromEmail": "deadpool@visitandsmile.fr",
+        "toEmail": "={{ $json.clients.email }}",
+        "subject": "={{ $json.relance_type === 'feedback' ? '💬 Votre avis nous intéresse — Visit & Smile' : $json.relance_type === 'nouvelles_propositions' ? '🏠 Nouvelles opportunités pour vous !' : '👋 Visit & Smile — Suivi' }}",
+        "text": "={{ $json.relance_type === 'feedback' ? 'Bonjour ' + $json.clients.first_name + ',\\n\\nSuite à notre visite, nous aimerions connaître vos impressions. Le bien vous a-t-il plu ?\\n\\nN\\'hésitez pas à nous contacter pour toute question.\\n\\nÀ bientôt !\\nAlison — Visit & Smile' : 'Bonjour ' + $json.clients.first_name + ',\\n\\nNous avons de nouvelles opportunités qui pourraient vous intéresser dans le secteur d\\'Orléans.\\n\\nContactez-nous pour en savoir plus !\\n\\nAlison — Visit & Smile' }}"
+      },
+      "name": "Email Relance",
+      "type": "n8n-nodes-base.sendGrid",
+      "typeVersion": 1,
+      "position": [900, 1100],
+      "id": "email-relance",
+      "credentials": { "sendGridApi": { "id": "sendgrid-key", "name": "SendGrid API" } }
+    }
+  ],
+  "connections": {
+    "Webhook Nouveau RDV": { "main": [[{ "node": "Créer Event Google Calendar", "type": "main", "index": 0 }, { "node": "Email Confirmation Client", "type": "main", "index": 0 }]] },
+    "Créer Event Google Calendar": { "main": [[{ "node": "Update RDV Supabase", "type": "main", "index": 0 }]] },
+    "Update RDV Supabase": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] },
+    "Cron Rappels RDV 8h": { "main": [[{ "node": "Get RDV Today", "type": "main", "index": 0 }]] },
+    "Get RDV Today": { "main": [[{ "node": "Has RDV?", "type": "main", "index": 0 }]] },
+    "Has RDV?": { "main": [[{ "node": "SMS Rappel Client", "type": "main", "index": 0 }], []] },
+    "Cron Anniversaires 7h": { "main": [[{ "node": "Get All Clients Birthdays", "type": "main", "index": 0 }]] },
+    "Get All Clients Birthdays": { "main": [[{ "node": "Filter Today Birthdays", "type": "main", "index": 0 }]] },
+    "Filter Today Birthdays": { "main": [[{ "node": "Email Anniversaire", "type": "main", "index": 0 }]] },
+    "Cron Relances 9h": { "main": [[{ "node": "Get Completed Visits", "type": "main", "index": 0 }]] },
+    "Get Completed Visits": { "main": [[{ "node": "Calc Relances Timing", "type": "main", "index": 0 }]] },
+    "Calc Relances Timing": { "main": [[{ "node": "Email Relance", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Agent Planning" }]
+}

@@ -1,0 +1,114 @@
+{
+  "name": "Deadpool IA — Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook Chatbot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "id": "webhook-chatbot",
+      "webhookId": "chatbot"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_dashboard_stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{ \"p_user_id\": \"{{ $json.body.user_id }}\" }"
+      },
+      "name": "Get User Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 200],
+      "id": "get-user-stats"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/appointments?start_time=gte.{{ $today.toISODate() }}&status=neq.cancelled&order=start_time&limit=5&user_id=eq.{{ $json.body.user_id }}&select=*,clients(first_name,last_name)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        }
+      },
+      "name": "Get Upcoming RDV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400],
+      "id": "get-upcoming-rdv"
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $node['Get User Stats'].json;\nconst rdvs = $node['Get Upcoming RDV'].json;\nconst message = $node['Webhook Chatbot'].json.body.message;\n\nconst context = `\nStats actuelles d'Alison :\n- CA ce mois : ${stats.ca_month}€\n- Ventes ce mois : ${stats.sales_month}\n- Bénéfice net : ${stats.total_net}€\n- Marge : ${stats.margin_rate}%\n- RDV à venir : ${Array.isArray(rdvs) ? rdvs.length : 0}\n\nProchains RDV :\n${Array.isArray(rdvs) ? rdvs.map(r => `- ${r.title} (${r.start_time})`).join('\\n') : 'Aucun RDV'}\n`;\n\nreturn [{ json: { message, context } }];"
+      },
+      "name": "Build Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "build-context"
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-haiku-latest",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Tu es Deadpool IA, l'assistant personnel d'Alison Mendes, auto-entrepreneuse immobilière chez Visit & Smile à Orléans. Tu es chaleureux, motivant, professionnel et tu utilises des emojis avec parcimonie. Tu connais ses stats en temps réel et tu l'aides dans son quotidien. Réponds de manière concise (max 3-4 phrases). Voici le contexte actuel :\n\n{{ $json.context }}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.7
+        }
+      },
+      "name": "Claude Deadpool IA",
+      "type": "n8n-nodes-base.anthropic",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "claude-chatbot",
+      "credentials": { "anthropicApi": { "id": "anthropic-key", "name": "Anthropic API" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"response\": {{ JSON.stringify($json.content[0].text) }} }"
+      },
+      "name": "Respond With Answer",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 300],
+      "id": "respond-answer"
+    }
+  ],
+  "connections": {
+    "Webhook Chatbot": { "main": [[{ "node": "Get User Stats", "type": "main", "index": 0 }, { "node": "Get Upcoming RDV", "type": "main", "index": 0 }]] },
+    "Get User Stats": { "main": [[{ "node": "Build Context", "type": "main", "index": 0 }]] },
+    "Get Upcoming RDV": { "main": [[{ "node": "Build Context", "type": "main", "index": 0 }]] },
+    "Build Context": { "main": [[{ "node": "Claude Deadpool IA", "type": "main", "index": 0 }]] },
+    "Claude Deadpool IA": { "main": [[{ "node": "Respond With Answer", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Chatbot" }]
+}

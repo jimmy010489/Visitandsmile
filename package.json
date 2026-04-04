@@ -1,0 +1,16 @@
+{
+  "name": "visit-and-smile",
+  "version": "1.0.0",
+  "description": "Visit & Smile — Deadpool IA — Assistant IA pour agents immobiliers",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "deploy": "vercel deploy --prod"
+  },
+  "author": "Visit & Smile",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "visit-and-smile",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "C:/Users/ghost/Documents/visit-and-smile", "--no-clipboard", "-l", "4200"],
+      "port": 4200
+    }
+  ]
+}
