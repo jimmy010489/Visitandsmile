@@ -1,5 +1,16 @@
 // ===== VISIT & SMILE — DEADPOOL IA — App Logic (Production) =====
 
+// ===== SANITIZATION — Protection XSS =====
+function sanitizeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
 // Splash screen — hide after load
 window.addEventListener('load', () => {
     const splash = document.getElementById('splashScreen');
@@ -356,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas ${a.icon || 'fa-robot'}"></i>
                         </div>
                         <div class="activity-content">
-                            <p>${a.message}</p>
+                            <p>${sanitizeHTML(a.message)}</p>
                             <span class="activity-time">${Utils.timeAgo(a.created_at)}</span>
                         </div>
                     </div>
@@ -395,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.innerHTML = sales.map(s => `
                     <tr>
                         <td>${Utils.formatDate(s.sale_date)}</td>
-                        <td>${s.property_name}</td>
+                        <td>${sanitizeHTML(s.property_name)}</td>
                         <td>${Utils.formatCurrency(s.sale_price)}</td>
                         <td>${Utils.formatCurrency(s.commission_amount)}</td>
                         <td><span class="status-badge ${Utils.statusBadgeClass(s.status)}">${s.status === 'paid' ? 'Encaissée' : s.status === 'pending' ? 'En attente' : 'Annulée'}</span></td>
@@ -408,8 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (checklistEl && declarations.length) {
                 checklistEl.innerHTML = declarations.map(d => `
                     <label class="checkbox-item">
-                        <input type="checkbox" ${d.status !== 'pending' ? 'checked' : ''} data-decl-id="${d.id}">
-                        ${d.label}
+                        <input type="checkbox" ${d.status !== 'pending' ? 'checked' : ''} data-decl-id="${sanitizeHTML(d.id)}">
+                        ${sanitizeHTML(d.label)}
                     </label>
                 `).join('');
 
@@ -447,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="post-platform"><i class="${Utils.platformIcon(p.platform)}" style="color:${Utils.platformColor(p.platform)}"></i> ${p.platform.charAt(0).toUpperCase() + p.platform.slice(1)}</span>
                             <span class="post-schedule"><i class="fas fa-clock"></i> ${Utils.formatDateTime(p.scheduled_at)}</span>
                         </div>
-                        <p class="post-caption">${p.content_text.substring(0, 120)}${p.content_text.length > 120 ? '...' : ''}</p>
+                        <p class="post-caption">${sanitizeHTML(p.content_text.substring(0, 120))}${p.content_text.length > 120 ? '...' : ''}</p>
                         <div class="post-actions">
                             <button class="btn-sm btn-outline" onclick="editPost('${p.id}')">Modifier</button>
                             <button class="btn-sm btn-gold" onclick="approvePost('${p.id}')">Approuver</button>
@@ -496,11 +507,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="conv-avatar">${initials}</div>
                             <div class="conv-info">
                                 <div class="conv-header">
-                                    <span class="conv-name">${name}</span>
+                                    <span class="conv-name">${sanitizeHTML(name)}</span>
                                     <span class="conv-source">${a.source === 'google_calendar' ? 'Google Calendar' : a.source === 'gmail' ? 'Gmail' : 'Manuel'}</span>
                                     <span class="conv-time">${Utils.formatDateTime(a.start_time)}</span>
                                 </div>
-                                <p class="conv-preview">${a.title}${a.description ? ' — ' + a.description : ''}</p>
+                                <p class="conv-preview">${sanitizeHTML(a.title)}${a.description ? ' — ' + sanitizeHTML(a.description) : ''}</p>
                                 <div class="conv-tags">
                                     <span class="tag ${Utils.statusBadgeClass(a.status)}">${a.status === 'confirmed' ? 'Confirmé' : a.status === 'scheduled' ? 'Programmé' : a.status}</span>
                                     <span class="tag">${a.type === 'visit' ? 'Visite' : a.type === 'signing' ? 'Signature' : a.type === 'estimation' ? 'Estimation' : a.type}</span>
@@ -530,9 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return `
                         <tr data-client-id="${c.id}">
-                            <td><strong>${c.first_name} ${c.last_name}</strong></td>
-                            <td>${typeLabels[c.client_type] || c.client_type}</td>
-                            <td>${c.property_interest || '—'}</td>
+                            <td><strong>${sanitizeHTML(c.first_name)} ${sanitizeHTML(c.last_name)}</strong></td>
+                            <td>${typeLabels[c.client_type] || sanitizeHTML(c.client_type)}</td>
+                            <td>${sanitizeHTML(c.property_interest) || '—'}</td>
                             <td>${c.budget ? Utils.formatCurrency(c.budget) : '—'}</td>
                             <td><span class="status-badge ${Utils.statusBadgeClass(c.status)}">${c.status === 'active' ? 'Actif' : c.status === 'prospect' ? 'Prospect' : 'Clôturé'}</span></td>
                             <td>${Utils.timeAgo(c.created_at)}</td>
@@ -766,7 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             tbody.innerHTML = sales.map(s => `
                                 <tr>
                                     <td>${Utils.formatDate(s.sale_date)}</td>
-                                    <td>${s.property_name}</td>
+                                    <td>${sanitizeHTML(s.property_name)}</td>
                                     <td>${Utils.formatCurrency(s.sale_price)}</td>
                                     <td>${Utils.formatCurrency(s.commission_amount)}</td>
                                     <td><span class="status-badge ${Utils.statusBadgeClass(s.status)}">${s.status === 'paid' ? 'Encaissée' : s.status === 'pending' ? 'En attente' : 'Annulée'}</span></td>
@@ -916,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fas ${newActivity.icon || 'fa-robot'}"></i>
                 </div>
                 <div class="activity-content">
-                    <p>${newActivity.message}</p>
+                    <p>${sanitizeHTML(newActivity.message)}</p>
                     <span class="activity-time">À l'instant</span>
                 </div>
             `;
@@ -1374,8 +1385,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="search-result-item" onclick="viewClientDetail('${c.id}')">
                         <div class="search-result-avatar">${initials}</div>
                         <div class="search-result-info">
-                            <div class="search-result-name">${c.first_name} ${c.last_name}</div>
-                            <div class="search-result-detail">${c.property_interest || '—'} · ${c.budget ? c.budget.toLocaleString('fr-FR') + ' €' : '—'}</div>
+                            <div class="search-result-name">${sanitizeHTML(c.first_name)} ${sanitizeHTML(c.last_name)}</div>
+                            <div class="search-result-detail">${sanitizeHTML(c.property_interest) || '—'} · ${c.budget ? c.budget.toLocaleString('fr-FR') + ' €' : '—'}</div>
                         </div>
                         <span class="search-result-type">${typeLabels[c.client_type] || c.client_type}</span>
                     </div>
@@ -1390,8 +1401,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="search-result-item" onclick="navigateTo('agent-compta')">
                     <div class="search-result-avatar sale"><i class="fas fa-coins"></i></div>
                     <div class="search-result-info">
-                        <div class="search-result-name">${s.property_name}</div>
-                        <div class="search-result-detail">${s.client_name || '—'} · ${Number(s.sale_price).toLocaleString('fr-FR')} €</div>
+                        <div class="search-result-name">${sanitizeHTML(s.property_name)}</div>
+                        <div class="search-result-detail">${sanitizeHTML(s.client_name) || '—'} · ${Number(s.sale_price).toLocaleString('fr-FR')} €</div>
                     </div>
                     <span class="search-result-type ${s.status === 'paid' ? 'green' : s.status === 'pending' ? 'orange' : 'red'}">${statusLabels[s.status] || s.status}</span>
                 </div>
@@ -1409,8 +1420,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="search-result-item" onclick="navigateTo('agent-planning')">
                         <div class="search-result-avatar rdv"><i class="fas ${rdvIcons[a.type] || 'fa-calendar'}"></i></div>
                         <div class="search-result-info">
-                            <div class="search-result-name">${a.title}</div>
-                            <div class="search-result-detail">${a.client_name || '—'} · ${dateStr} à ${timeStr}</div>
+                            <div class="search-result-name">${sanitizeHTML(a.title)}</div>
+                            <div class="search-result-detail">${sanitizeHTML(a.client_name) || '—'} · ${dateStr} à ${timeStr}</div>
                         </div>
                         <span class="search-result-type">${rdvLabels[a.type] || a.type}</span>
                     </div>
@@ -1434,18 +1445,20 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTimeout = setTimeout(async () => {
             if (isSupabaseConfigured) {
                 try {
+                    // Sanitize search query — escape special PostgREST characters
+                    const safeQuery = query.replace(/[%_\\,.()"']/g, '');
                     const [clientsRes, salesRes, rdvRes] = await Promise.all([
                         db.from('clients')
                             .select('*')
-                            .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,property_interest.ilike.%${query}%`)
+                            .or(`first_name.ilike.%${safeQuery}%,last_name.ilike.%${safeQuery}%,property_interest.ilike.%${safeQuery}%`)
                             .limit(4),
                         db.from('sales')
                             .select('*')
-                            .or(`property_name.ilike.%${query}%`)
+                            .or(`property_name.ilike.%${safeQuery}%`)
                             .limit(3),
                         db.from('appointments')
                             .select('*')
-                            .or(`title.ilike.%${query}%`)
+                            .or(`title.ilike.%${safeQuery}%`)
                             .limit(3)
                     ]);
                     renderGlobalSearchResults(clientsRes.data, salesRes.data, rdvRes.data);
@@ -1763,8 +1776,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('clientDetailAvatar').textContent = initials;
         document.getElementById('clientDetailAvatar').dataset.clientId = client.id;
         document.getElementById('clientDetailType').textContent = typeLabels[client.client_type] || client.client_type;
-        document.getElementById('clientDetailEmail').innerHTML = client.email ? `<a href="mailto:${client.email}" style="color:var(--gold)">${client.email}</a>` : '—';
-        document.getElementById('clientDetailPhone').innerHTML = client.phone ? `<a href="tel:${client.phone}" style="color:var(--gold)">${client.phone}</a>` : '—';
+        document.getElementById('clientDetailEmail').innerHTML = client.email ? `<a href="mailto:${sanitizeHTML(client.email)}" style="color:var(--gold)">${sanitizeHTML(client.email)}</a>` : '—';
+        document.getElementById('clientDetailPhone').innerHTML = client.phone ? `<a href="tel:${sanitizeHTML(client.phone)}" style="color:var(--gold)">${sanitizeHTML(client.phone)}</a>` : '—';
         document.getElementById('clientDetailBirthday').textContent = client.birthday ? new Date(client.birthday).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
         document.getElementById('clientDetailProperty').textContent = client.property_interest || '—';
         document.getElementById('clientDetailBudget').textContent = client.budget ? client.budget.toLocaleString('fr-FR') + ' €' : '—';

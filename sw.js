@@ -46,8 +46,11 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
         fetch(e.request)
             .then(response => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+                // Only cache valid responses (not errors or opaque responses)
+                if (response.status === 200 && response.type !== 'opaqueredirect') {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+                }
                 return response;
             })
             .catch(() => caches.match(e.request))
