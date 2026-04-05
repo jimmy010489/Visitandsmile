@@ -221,13 +221,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeNav = document.querySelector(`[data-page="${pageId}"]`);
         if (activeNav) activeNav.classList.add('active');
 
-        pages.forEach(page => page.classList.remove('active'));
+        // Transition de page
+        const currentPage = document.querySelector('.page.active');
         const targetPage = document.getElementById(`page-${pageId}`);
-        if (targetPage) {
+
+        if (currentPage && targetPage && currentPage !== targetPage) {
+            currentPage.classList.add('page-exit');
+            setTimeout(() => {
+                pages.forEach(page => {
+                    page.classList.remove('active', 'page-exit');
+                });
+                targetPage.classList.add('active', 'page-enter');
+                // Scroll to top
+                document.querySelector('.main-content')?.scrollTo(0, 0);
+                setTimeout(() => targetPage.classList.remove('page-enter'), 350);
+            }, 150);
+        } else if (targetPage) {
+            pages.forEach(page => page.classList.remove('active'));
             targetPage.classList.add('active');
-            targetPage.style.animation = 'none';
-            targetPage.offsetHeight;
-            targetPage.style.animation = '';
         }
 
         document.getElementById('sidebar').classList.remove('open');
@@ -2253,6 +2264,154 @@ document.addEventListener('DOMContentLoaded', () => {
         offlineBanner?.classList.add('visible');
         showToast('Hors-ligne', 'Connexion internet perdue', 'warning');
     });
+
+    // ===== MODE PRÉSENTATION =====
+    const demoOverlay = document.getElementById('demoOverlay');
+    const demoSteps = [
+        {
+            page: 'dashboard',
+            label: 'Dashboard',
+            description: 'Le tableau de bord affiche en temps réel ton CA, tes ventes, l\'engagement social et les RDV de la semaine. Les graphiques se mettent à jour automatiquement.'
+        },
+        {
+            page: 'agent-compta',
+            label: 'Agent Comptable',
+            description: 'L\'agent comptable suit tes commissions, calcule l\'URSSAF automatiquement, et t\'envoie un résumé chaque lundi. Tu peux exporter en CSV pour ton comptable.'
+        },
+        {
+            page: 'agent-social',
+            label: 'Agent Réseaux Sociaux',
+            description: 'L\'IA crée des posts adaptés à chaque plateforme (Instagram, Facebook, LinkedIn, TikTok). Tu approuves avant publication et tu peux réorganiser l\'ordre par drag & drop.'
+        },
+        {
+            page: 'agent-planning',
+            label: 'Agent Planning & RDV',
+            description: 'Gestion automatique des RDV avec Google Calendar, rappels SMS/email, relances post-visite et messages d\'anniversaire. Le mini calendrier montre tes RDV du jour.'
+        },
+        {
+            page: 'clients',
+            label: 'Gestion Clients',
+            description: 'Tous tes clients au même endroit avec stats, recherche, export CSV, fiche détaillée, modification et suppression. La recherche globale couvre aussi les ventes et RDV.'
+        },
+        {
+            page: 'settings',
+            label: 'Paramètres',
+            description: 'Configure tes infos, taux de commission, URSSAF, connexions API et notifications. Tout est sauvegardé automatiquement.'
+        },
+        {
+            page: 'guide',
+            label: 'Guide Utilisateur',
+            description: 'Un guide complet intégré pour former Alison à l\'utilisation de l\'app. Imprimable en PDF depuis le navigateur.'
+        }
+    ];
+    let demoCurrentStep = 0;
+
+    function startDemoMode() {
+        demoCurrentStep = 0;
+        demoOverlay.classList.add('active');
+        showDemoStep(0);
+    }
+
+    function stopDemoMode() {
+        demoOverlay.classList.remove('active');
+    }
+
+    function showDemoStep(idx) {
+        const step = demoSteps[idx];
+        if (!step) { stopDemoMode(); return; }
+
+        document.getElementById('demoStepLabel').textContent = `Étape ${idx + 1}/${demoSteps.length}`;
+        document.getElementById('demoDescription').textContent = step.description;
+
+        // Navigate to the page
+        navigateTo(step.page);
+
+        // Update next button label
+        const nextBtn = document.getElementById('demoNext');
+        if (idx === demoSteps.length - 1) {
+            nextBtn.innerHTML = '<i class="fas fa-check"></i> Terminer';
+        } else {
+            nextBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Suivant';
+        }
+    }
+
+    document.getElementById('btnDemoMode')?.addEventListener('click', startDemoMode);
+    document.getElementById('demoExit')?.addEventListener('click', stopDemoMode);
+
+    document.getElementById('demoNext')?.addEventListener('click', () => {
+        demoCurrentStep++;
+        if (demoCurrentStep >= demoSteps.length) {
+            stopDemoMode();
+            showToast('Présentation terminée', 'Merci pour votre attention !', 'success', 4000);
+        } else {
+            showDemoStep(demoCurrentStep);
+        }
+    });
+
+    document.getElementById('demoPrev')?.addEventListener('click', () => {
+        if (demoCurrentStep > 0) {
+            demoCurrentStep--;
+            showDemoStep(demoCurrentStep);
+        }
+    });
+
+    // ===== DRAG & DROP POSTS =====
+    function initDragDrop() {
+        const grid = document.querySelector('.posts-grid');
+        if (!grid) return;
+
+        let draggedCard = null;
+
+        grid.querySelectorAll('.post-card[draggable]').forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                draggedCard = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                // Need timeout so the dragging class shows
+                setTimeout(() => card.style.opacity = '0.4', 0);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                card.style.opacity = '';
+                draggedCard = null;
+                // Remove all drag-over states
+                grid.querySelectorAll('.post-card').forEach(c => c.classList.remove('drag-over'));
+                showToast('Ordre mis à jour', 'L\'ordre de publication a été modifié', 'success', 2000);
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (card !== draggedCard) {
+                    card.classList.add('drag-over');
+                }
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-over');
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                if (draggedCard && card !== draggedCard) {
+                    // Swap positions
+                    const allCards = [...grid.querySelectorAll('.post-card')];
+                    const dragIdx = allCards.indexOf(draggedCard);
+                    const dropIdx = allCards.indexOf(card);
+
+                    if (dragIdx < dropIdx) {
+                        grid.insertBefore(draggedCard, card.nextSibling);
+                    } else {
+                        grid.insertBefore(draggedCard, card);
+                    }
+                }
+            });
+        });
+    }
+
+    initDragDrop();
 
     // ===== DASHBOARD AGENT CARDS → NAVIGATION =====
     document.querySelectorAll('.agent-card').forEach(card => {

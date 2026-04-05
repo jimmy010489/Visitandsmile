@@ -161,8 +161,11 @@
                     <h2>Tableau de bord</h2>
                     <p class="page-subtitle">Vue d'ensemble de vos agents IA</p>
                 </div>
-                <div class="last-login" id="lastLogin">
-                    <i class="fas fa-clock"></i> <span id="lastLoginTime"></span>
+                <div class="dashboard-header-right">
+                    <button class="btn-outline btn-sm btn-demo-mode" id="btnDemoMode"><i class="fas fa-play-circle"></i> Mode présentation</button>
+                    <div class="last-login" id="lastLogin">
+                        <i class="fas fa-clock"></i> <span id="lastLoginTime"></span>
+                    </div>
                 </div>
             </div>
 
@@ -872,7 +875,8 @@
                 <button class="btn-gold btn-sm" id="btnNouveauPost"><i class="fas fa-plus"></i> Créer un post</button>
             </div>
             <div class="posts-grid">
-                <div class="post-card">
+                <div class="post-card" draggable="true">
+                    <div class="post-drag-handle"><i class="fas fa-grip-vertical"></i></div>
                     <div class="post-preview">
                         <div class="post-placeholder"><i class="fas fa-image"></i></div>
                     </div>
@@ -886,7 +890,8 @@
                         <button class="btn-sm btn-gold">Approuver</button>
                     </div>
                 </div>
-                <div class="post-card">
+                <div class="post-card" draggable="true">
+                    <div class="post-drag-handle"><i class="fas fa-grip-vertical"></i></div>
                     <div class="post-preview">
                         <div class="post-placeholder"><i class="fas fa-image"></i></div>
                     </div>
@@ -900,7 +905,8 @@
                         <button class="btn-sm btn-gold">Approuver</button>
                     </div>
                 </div>
-                <div class="post-card">
+                <div class="post-card" draggable="true">
+                    <div class="post-drag-handle"><i class="fas fa-grip-vertical"></i></div>
                     <div class="post-preview">
                         <div class="post-placeholder"><i class="fas fa-video"></i></div>
                     </div>
@@ -1876,6 +1882,25 @@
     </div>
 
     <!-- Onboarding Tour -->
+    <!-- Demo Mode Overlay -->
+    <div class="demo-overlay" id="demoOverlay">
+        <div class="demo-bar">
+            <div class="demo-bar-left">
+                <span class="demo-live-dot"></span>
+                <span class="demo-label">PRÉSENTATION</span>
+                <span class="demo-step-label" id="demoStepLabel">Étape 1/7</span>
+            </div>
+            <div class="demo-bar-center">
+                <p class="demo-description" id="demoDescription"></p>
+            </div>
+            <div class="demo-bar-right">
+                <button class="btn-sm btn-outline" id="demoPrev"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn-sm btn-gold" id="demoNext"><i class="fas fa-arrow-right"></i> Suivant</button>
+                <button class="btn-sm btn-outline" id="demoExit" style="border-color:var(--red);color:var(--red)"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Command Palette -->
     <div class="cmd-palette-overlay" id="commandPalette">
         <div class="cmd-palette">

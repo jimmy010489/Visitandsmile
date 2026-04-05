@@ -615,6 +615,25 @@ body::after {
 
 .page.active { display: block; }
 
+.page.page-enter {
+    animation: pageSlideIn 0.3s ease forwards;
+}
+
+.page.page-exit {
+    display: block;
+    animation: pageSlideOut 0.15s ease forwards;
+}
+
+@keyframes pageSlideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pageSlideOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-8px); }
+}
+
 @keyframes pageEnter {
     from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
     to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -1557,6 +1576,49 @@ body::after {
 .post-card:hover {
     border-color: rgba(212, 169, 49, 0.3);
     box-shadow: var(--shadow-gold);
+}
+
+.post-card[draggable="true"] {
+    position: relative;
+    cursor: grab;
+}
+
+.post-card[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.post-drag-handle {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: var(--gray-dark);
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: grab;
+    z-index: 2;
+    padding: 0.3rem;
+}
+
+.post-card:hover .post-drag-handle {
+    opacity: 0.5;
+}
+
+.post-drag-handle:hover {
+    opacity: 1 !important;
+    color: var(--gold);
+}
+
+.post-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.96);
+    border-color: var(--gold);
+}
+
+.post-card.drag-over {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(212,169,49,0.3);
+    transform: scale(1.02);
 }
 
 .post-preview {
@@ -2988,6 +3050,92 @@ textarea.form-input {
     background: var(--gold-glow);
     border-color: var(--gold);
     transform: translateX(-4px);
+}
+
+/* ===== DEMO PRESENTATION MODE ===== */
+.demo-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    display: none;
+    pointer-events: none;
+}
+
+.demo-overlay.active {
+    display: block;
+}
+
+.demo-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 1.5rem;
+    background: rgba(3,3,6,0.95);
+    border-top: 2px solid var(--gold);
+    backdrop-filter: blur(10px);
+    pointer-events: all;
+}
+
+.demo-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.demo-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.5s ease infinite;
+}
+
+.demo-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 0.1em;
+}
+
+.demo-step-label {
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.demo-bar-center {
+    flex: 1;
+}
+
+.demo-description {
+    font-size: 0.78rem;
+    color: var(--white);
+    line-height: 1.4;
+}
+
+.demo-bar-right {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.dashboard-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.btn-demo-mode {
+    border-color: rgba(0,230,118,0.3) !important;
+    color: var(--green) !important;
+}
+
+.btn-demo-mode:hover {
+    background: rgba(0,230,118,0.1) !important;
 }
 
 /* ===== DANGER BUTTON ===== */
