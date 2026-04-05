@@ -151,9 +151,9 @@ Voir `SETUP.md` pour le guide complet. Resume :
 - [x] ~~Command palette (Ctrl+K)~~ DONE
 - [x] ~~Export clients CSV~~ DONE
 - [x] ~~Mini calendrier planning~~ DONE
-- [ ] Ajouter suppression client avec confirmation (optionnel)
+- [x] ~~Suppression client avec modal de confirmation~~ DONE
+- [x] ~~Guide utilisateur integre (8 sections, imprimable)~~ DONE
 - [ ] Ajouter drag & drop pour reordonner les posts programmes (optionnel)
-- [ ] Guide utilisateur PDF-ready pour Alison (optionnel)
 
 ## Commandes dev
 ```bash
