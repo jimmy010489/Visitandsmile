@@ -157,8 +157,13 @@
         <!-- Dashboard Page -->
         <div class="page active" id="page-dashboard">
             <div class="page-header">
-                <h2>Tableau de bord</h2>
-                <p class="page-subtitle">Vue d'ensemble de vos agents IA</p>
+                <div class="page-header-left">
+                    <h2>Tableau de bord</h2>
+                    <p class="page-subtitle">Vue d'ensemble de vos agents IA</p>
+                </div>
+                <div class="last-login" id="lastLogin">
+                    <i class="fas fa-clock"></i> <span id="lastLoginTime"></span>
+                </div>
             </div>
 
             <!-- Stats Cards -->
@@ -1162,6 +1167,39 @@
                     <button class="btn-gold" id="btnNouveauClient"><i class="fas fa-plus"></i> Ajouter un client</button>
                 </div>
             </div>
+
+            <!-- Client Stats -->
+            <div class="client-stats-row">
+                <div class="client-stat-mini">
+                    <div class="client-stat-mini-icon"><i class="fas fa-users"></i></div>
+                    <div class="client-stat-mini-info">
+                        <span class="client-stat-mini-value" id="statTotalClients">5</span>
+                        <span class="client-stat-mini-label">Total</span>
+                    </div>
+                </div>
+                <div class="client-stat-mini">
+                    <div class="client-stat-mini-icon active"><i class="fas fa-user-check"></i></div>
+                    <div class="client-stat-mini-info">
+                        <span class="client-stat-mini-value" id="statActiveClients">5</span>
+                        <span class="client-stat-mini-label">Actifs</span>
+                    </div>
+                </div>
+                <div class="client-stat-mini">
+                    <div class="client-stat-mini-icon buyer"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="client-stat-mini-info">
+                        <span class="client-stat-mini-value" id="statBuyerClients">4</span>
+                        <span class="client-stat-mini-label">Acheteurs</span>
+                    </div>
+                </div>
+                <div class="client-stat-mini">
+                    <div class="client-stat-mini-icon seller"><i class="fas fa-home"></i></div>
+                    <div class="client-stat-mini-info">
+                        <span class="client-stat-mini-value" id="statSellerClients">1</span>
+                        <span class="client-stat-mini-label">Vendeurs</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="contacts-table">
                 <table>
                     <thead>
@@ -1787,6 +1825,31 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- FAB (Floating Action Button) -->
+    <div class="fab-container" id="fabContainer">
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab-action" data-action="new-sale" title="Nouvelle vente">
+                <i class="fas fa-coins"></i>
+                <span>Vente</span>
+            </button>
+            <button class="fab-action" data-action="new-client" title="Nouveau client">
+                <i class="fas fa-user-plus"></i>
+                <span>Client</span>
+            </button>
+            <button class="fab-action" data-action="new-rdv" title="Nouveau RDV">
+                <i class="fas fa-calendar-plus"></i>
+                <span>RDV</span>
+            </button>
+            <button class="fab-action" data-action="new-post" title="Nouveau post">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Post</span>
+            </button>
+        </div>
+        <button class="fab-btn" id="fabBtn">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
 
     <!-- Floating Chatbot Deadpool IA -->

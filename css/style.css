@@ -2822,6 +2822,174 @@ textarea.form-input {
     }
 }
 
+/* ===== LAST LOGIN ===== */
+.last-login {
+    font-size: 0.7rem;
+    color: var(--gray-light);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    opacity: 0.6;
+}
+
+.last-login i {
+    font-size: 0.6rem;
+    color: var(--gold);
+}
+
+/* ===== CLIENT STATS ROW ===== */
+.client-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.client-stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--black-card);
+    border: 1px solid var(--gold-glow-md);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+}
+
+.client-stat-mini-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--gold-glow);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.client-stat-mini-icon.active { background: rgba(0,230,118,0.1); color: var(--green); }
+.client-stat-mini-icon.buyer { background: rgba(108,92,231,0.12); color: #a78bfa; }
+.client-stat-mini-icon.seller { background: rgba(0,149,246,0.1); color: #38bdf8; }
+
+.client-stat-mini-value {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+}
+
+.client-stat-mini-label {
+    font-size: 0.65rem;
+    color: var(--gray-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.client-stat-mini-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+@media (max-width: 768px) {
+    .client-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ===== FAB (Floating Action Button) ===== */
+.fab-container {
+    position: fixed;
+    bottom: 5.5rem;
+    right: 1.5rem;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.fab-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #b8941e);
+    color: var(--black-bg);
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(212,169,49,0.35);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 2;
+}
+
+.fab-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 24px rgba(212,169,49,0.5);
+}
+
+.fab-container.open .fab-btn {
+    transform: rotate(45deg);
+    background: var(--black-card);
+    color: var(--gold);
+    border: 1px solid var(--gold-glow-md);
+}
+
+.fab-menu {
+    position: absolute;
+    bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-container.open .fab-menu {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.fab-action {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1rem;
+    background: var(--black-card);
+    border: 1px solid var(--gold-glow-md);
+    border-radius: 24px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.fab-action i {
+    color: var(--gold);
+    font-size: 0.7rem;
+    width: 18px;
+    text-align: center;
+}
+
+.fab-action:hover {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+    transform: translateX(-4px);
+}
+
 /* ===== DANGER BUTTON ===== */
 .btn-danger {
     background: transparent;

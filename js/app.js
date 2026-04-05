@@ -2386,6 +2386,85 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial render
     renderCalendar();
 
+    // ===== FAB (Floating Action Button) =====
+    const fabBtn = document.getElementById('fabBtn');
+    const fabContainer = document.getElementById('fabContainer');
+
+    if (fabBtn) {
+        fabBtn.addEventListener('click', () => {
+            fabContainer.classList.toggle('open');
+        });
+
+        // Close FAB when clicking outside
+        document.addEventListener('click', (e) => {
+            if (fabContainer && !fabContainer.contains(e.target)) {
+                fabContainer.classList.remove('open');
+            }
+        });
+
+        // FAB action buttons
+        document.querySelectorAll('.fab-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                fabContainer.classList.remove('open');
+                const action = btn.dataset.action;
+                switch (action) {
+                    case 'new-sale': openModalVente?.(); break;
+                    case 'new-client': openModalClient?.(); break;
+                    case 'new-rdv': openModalRDV?.(); break;
+                    case 'new-post': openModalPost?.(); break;
+                }
+            });
+        });
+    }
+
+    // ===== LAST LOGIN =====
+    const lastLoginEl = document.getElementById('lastLoginTime');
+    if (lastLoginEl) {
+        const prev = localStorage.getItem('visitandsmile_last_login');
+        if (prev) {
+            const d = new Date(prev);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffH = Math.floor(diffMs / 3600000);
+            const diffD = Math.floor(diffMs / 86400000);
+
+            let label;
+            if (diffMin < 2) label = "à l'instant";
+            else if (diffMin < 60) label = `il y a ${diffMin} min`;
+            else if (diffH < 24) label = `il y a ${diffH}h`;
+            else if (diffD === 1) label = 'hier';
+            else label = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+            lastLoginEl.textContent = `Dernière connexion : ${label}`;
+        } else {
+            lastLoginEl.textContent = 'Première connexion !';
+        }
+        localStorage.setItem('visitandsmile_last_login', new Date().toISOString());
+    }
+
+    // ===== CLIENT STATS UPDATE =====
+    function updateClientStats() {
+        const clients = demoClients;
+        const total = clients.length;
+        const active = clients.filter(c => c.status === 'active').length;
+        const buyers = clients.filter(c => c.client_type === 'buyer').length;
+        const sellers = clients.filter(c => c.client_type === 'seller').length;
+
+        const elTotal = document.getElementById('statTotalClients');
+        const elActive = document.getElementById('statActiveClients');
+        const elBuyer = document.getElementById('statBuyerClients');
+        const elSeller = document.getElementById('statSellerClients');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elActive) elActive.textContent = active;
+        if (elBuyer) elBuyer.textContent = buyers;
+        if (elSeller) elSeller.textContent = sellers;
+    }
+
+    // Initial stats
+    updateClientStats();
+
     // ===== CHART ANIMATION ON LOAD =====
     setTimeout(() => {
         document.querySelectorAll('.chart-bar').forEach(bar => {
