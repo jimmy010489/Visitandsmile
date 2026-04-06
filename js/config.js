@@ -16,7 +16,7 @@ const CONFIG = (() => {
         SUPABASE_ANON_KEY: getMeta('supabase-anon-key') || 'VOTRE_ANON_KEY',
 
         // n8n Webhooks
-        N8N_BASE_URL: getMeta('n8n-url') || 'https://n8n.votredomaine.com',
+        N8N_BASE_URL: getMeta('n8n-url') || 'https://jimmy010489.app.n8n.cloud',
         WEBHOOKS: {
             CHATBOT: '/webhook/chatbot',
             NEW_SALE: '/webhook/new-sale',

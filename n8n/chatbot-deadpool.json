@@ -5,7 +5,8 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "chatbot",
-        "responseMode": "responseNode"
+        "responseMode": "responseNode",
+        "options": {}
       },
       "name": "Webhook Chatbot",
       "type": "n8n-nodes-base.webhook",
@@ -17,97 +18,40 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_dashboard_stats",
+        "url": "https://api.anthropic.com/v1/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "x-api-key", "value": "VOTRE_CLE_API_ANTHROPIC" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
-        "body": "{ \"p_user_id\": \"{{ $json.body.user_id }}\" }"
-      },
-      "name": "Get User Stats",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [460, 200],
-      "id": "get-user-stats"
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/appointments?start_time=gte.{{ $today.toISODate() }}&status=neq.cancelled&order=start_time&limit=5&user_id=eq.{{ $json.body.user_id }}&select=*,clients(first_name,last_name)",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
-          ]
-        }
-      },
-      "name": "Get Upcoming RDV",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [460, 400],
-      "id": "get-upcoming-rdv"
-    },
-    {
-      "parameters": {
-        "jsCode": "const stats = $node['Get User Stats'].json;\nconst rdvs = $node['Get Upcoming RDV'].json;\nconst message = $node['Webhook Chatbot'].json.body.message;\n\nconst context = `\nStats actuelles d'Alison :\n- CA ce mois : ${stats.ca_month}€\n- Ventes ce mois : ${stats.sales_month}\n- Bénéfice net : ${stats.total_net}€\n- Marge : ${stats.margin_rate}%\n- RDV à venir : ${Array.isArray(rdvs) ? rdvs.length : 0}\n\nProchains RDV :\n${Array.isArray(rdvs) ? rdvs.map(r => `- ${r.title} (${r.start_time})`).join('\\n') : 'Aucun RDV'}\n`;\n\nreturn [{ json: { message, context } }];"
-      },
-      "name": "Build Context",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [680, 300],
-      "id": "build-context"
-    },
-    {
-      "parameters": {
-        "model": "claude-3-5-haiku-latest",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "Tu es Deadpool IA, l'assistant personnel d'Alison Mendes, auto-entrepreneuse immobilière chez Visit & Smile à Orléans. Tu es chaleureux, motivant, professionnel et tu utilises des emojis avec parcimonie. Tu connais ses stats en temps réel et tu l'aides dans son quotidien. Réponds de manière concise (max 3-4 phrases). Voici le contexte actuel :\n\n{{ $json.context }}"
-            },
-            {
-              "role": "user",
-              "content": "={{ $json.message }}"
-            }
-          ]
-        },
-        "options": {
-          "maxTokens": 300,
-          "temperature": 0.7
-        }
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-20250414\",\n  \"max_tokens\": 300,\n  \"system\": \"Tu es Deadpool IA, l'assistant personnel d'Alison Mendes, auto-entrepreneuse immobiliere chez Visit & Smile a Orleans. Tu es chaleureux, motivant, professionnel et tu utilises des emojis avec parcimonie. Tu l'aides dans son quotidien immobilier. Reponds de maniere concise (max 3-4 phrases) et toujours en francais.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.body.message }}\"\n    }\n  ]\n}"
       },
       "name": "Claude Deadpool IA",
-      "type": "n8n-nodes-base.anthropic",
-      "typeVersion": 1,
-      "position": [900, 300],
-      "id": "claude-chatbot",
-      "credentials": { "anthropicApi": { "id": "anthropic-key", "name": "Anthropic API" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300],
+      "id": "claude-chatbot"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ \"response\": {{ JSON.stringify($json.content[0].text) }} }"
+        "responseBody": "={{ { \"response\": $json.content[0].text } }}"
       },
-      "name": "Respond With Answer",
+      "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1120, 300],
+      "position": [800, 300],
       "id": "respond-answer"
     }
   ],
   "connections": {
-    "Webhook Chatbot": { "main": [[{ "node": "Get User Stats", "type": "main", "index": 0 }, { "node": "Get Upcoming RDV", "type": "main", "index": 0 }]] },
-    "Get User Stats": { "main": [[{ "node": "Build Context", "type": "main", "index": 0 }]] },
-    "Get Upcoming RDV": { "main": [[{ "node": "Build Context", "type": "main", "index": 0 }]] },
-    "Build Context": { "main": [[{ "node": "Claude Deadpool IA", "type": "main", "index": 0 }]] },
-    "Claude Deadpool IA": { "main": [[{ "node": "Respond With Answer", "type": "main", "index": 0 }]] }
+    "Webhook Chatbot": { "main": [[{ "node": "Claude Deadpool IA", "type": "main", "index": 0 }]] },
+    "Claude Deadpool IA": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "tags": [{ "name": "Visit & Smile" }, { "name": "Chatbot" }]
