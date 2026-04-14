@@ -11,6 +11,20 @@ function sanitizeHTML(str) {
         .replace(/'/g, '&#x27;');
 }
 
+// ===== ACTIVITY MESSAGE RENDERER — Permet <strong>, <em>, <b>, <i> =====
+function renderActivityMessage(str) {
+    if (str === null || str === undefined) return '';
+    // Sauvegarder les balises autorisées avant sanitize
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        // Réactiver uniquement les balises de mise en forme sûres
+        .replace(/&lt;(\/?(strong|em|b|i))&gt;/g, '<$1>');
+}
+
 // ===== RATE LIMITER — Protection anti-spam webhooks =====
 const RateLimiter = (() => {
     const limits = {}; // { key: { count, resetTime } }
@@ -399,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas ${a.icon || 'fa-robot'}"></i>
                         </div>
                         <div class="activity-content">
-                            <p>${sanitizeHTML(a.message)}</p>
+                            <p>${renderActivityMessage(a.message)}</p>
                             <span class="activity-time">${Utils.timeAgo(a.created_at)}</span>
                         </div>
                     </div>
@@ -1276,7 +1290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fas ${newActivity.icon || 'fa-robot'}"></i>
                 </div>
                 <div class="activity-content">
-                    <p>${sanitizeHTML(newActivity.message)}</p>
+                    <p>${renderActivityMessage(newActivity.message)}</p>
                     <span class="activity-time">À l'instant</span>
                 </div>
             `;
