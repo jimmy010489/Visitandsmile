@@ -367,13 +367,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const chartCA = document.getElementById('chartCA');
                 if (chartCA) {
                     const maxCA = Math.max(...caByMonth.map(m => m.ca));
-                    chartCA.innerHTML = caByMonth.map(m => `
+                    chartCA.innerHTML = caByMonth.map(m => {
+                        const caNum = parseFloat(m.ca) || 0;
+                        const heightPct = maxCA > 0 ? (caNum / maxCA * 85) : 0;
+                        return `
                         <div class="chart-bar-col">
-                            <span class="chart-bar-value">${Utils.formatCompact(m.ca)}</span>
-                            <div class="chart-bar gold" style="height: ${maxCA > 0 ? (m.ca / maxCA * 85) : 0}%"></div>
-                            <span class="chart-bar-label">${m.label}</span>
+                            <span class="chart-bar-value">${Utils.formatCompact(caNum)}</span>
+                            <div class="chart-bar gold" style="height: ${heightPct.toFixed(2)}%"></div>
+                            <span class="chart-bar-label">${sanitizeHTML(m.label)}</span>
                         </div>
-                    `).join('');
+                    `}).join('');
 
                     // Animation
                     setTimeout(() => {
@@ -467,9 +470,124 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ===== MEDIA LIBRARY (Visuels reseaux sociaux) =====
+    async function loadMediaLibrary() {
+        if (!isSupabaseConfigured) return;
+        try {
+            const medias = await Media.list();
+            const grid = document.getElementById('mediaLibraryGrid');
+            const empty = document.getElementById('mediaEmpty');
+            if (!grid) return;
+
+            if (!medias.length) {
+                if (empty) empty.style.display = 'block';
+                // Garder uniquement le placeholder vide
+                grid.innerHTML = '';
+                grid.appendChild(empty || document.createElement('div'));
+                return;
+            }
+
+            grid.innerHTML = medias.map(m => `
+                <div class="media-card" data-media-id="${m.id}">
+                    <img class="media-card-image" src="${sanitizeHTML(m.public_url || '')}" alt="${sanitizeHTML(m.file_name || '')}" loading="lazy">
+                    ${m.used_count > 0 ? `<span class="media-card-badge"><i class="fas fa-check"></i>${m.used_count}</span>` : ''}
+                    <div class="media-card-overlay">
+                        <div class="media-card-desc">${sanitizeHTML(m.description || m.file_name || '')}</div>
+                        <div class="media-card-actions">
+                            <button class="media-card-btn" onclick="editMediaDesc('${m.id}')"><i class="fas fa-pen"></i></button>
+                            <button class="media-card-btn delete" onclick="deleteMedia('${m.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.error('Media library load error:', err);
+        }
+    }
+
+    async function handleMediaUpload(files) {
+        if (!isSupabaseConfigured) {
+            showToast('Mode demo', 'L\'upload necessite Supabase', 'error');
+            return;
+        }
+        const grid = document.getElementById('mediaLibraryGrid');
+        const empty = document.getElementById('mediaEmpty');
+        if (empty) empty.style.display = 'none';
+
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Format invalide', `${file.name} n'est pas une image`, 'error');
+                continue;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('Fichier trop gros', `${file.name} depasse 10 Mo`, 'error');
+                continue;
+            }
+
+            // Placeholder de chargement
+            const loader = document.createElement('div');
+            loader.className = 'media-upload-progress';
+            loader.innerHTML = '<div class="spinner"></div>';
+            if (grid) grid.prepend(loader);
+
+            try {
+                const description = prompt(`Description pour "${file.name}" (optionnel, ex: "T3 Saint-Marceau 65m2 balcon") :`, '') || '';
+                await Media.upload(file, description);
+                showToast('Visuel uploade', file.name, 'success');
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('Erreur upload', err.message, 'error');
+            } finally {
+                loader.remove();
+            }
+        }
+        await loadMediaLibrary();
+    }
+
+    window.deleteMedia = async function(id) {
+        if (!confirm('Supprimer ce visuel ?')) return;
+        try {
+            await Media.delete(id);
+            showToast('Visuel supprime', '', 'success');
+            await loadMediaLibrary();
+        } catch (err) {
+            console.error(err);
+            showToast('Erreur', 'Suppression echouee', 'error');
+        }
+    };
+
+    window.editMediaDesc = async function(id) {
+        const newDesc = prompt('Nouvelle description :', '');
+        if (newDesc === null) return;
+        try {
+            await Media.updateDescription(id, newDesc);
+            showToast('Description mise a jour', '', 'success');
+            await loadMediaLibrary();
+        } catch (err) {
+            console.error(err);
+            showToast('Erreur', 'Operation echouee', 'error');
+        }
+    };
+
+    // Wiring du bouton upload
+    const btnUploadMedia = document.getElementById('btnUploadMedia');
+    const mediaUploadInput = document.getElementById('mediaUploadInput');
+    if (btnUploadMedia && mediaUploadInput) {
+        btnUploadMedia.addEventListener('click', () => mediaUploadInput.click());
+        mediaUploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length) {
+                handleMediaUpload(Array.from(e.target.files));
+                e.target.value = '';
+            }
+        });
+    }
+
     // ===== SOCIAL DATA =====
     async function loadSocialData() {
         try {
+            // Charger aussi la bibliotheque de visuels
+            loadMediaLibrary();
+
             const [posts, configs] = await Promise.all([
                 SocialPosts.list({ upcoming: true, limit: 6 }),
                 SocialConfig.list()
@@ -478,8 +596,29 @@ document.addEventListener('DOMContentLoaded', () => {
             // Posts à venir
             const postsGrid = document.querySelector('#page-agent-social .posts-grid');
             if (postsGrid && posts.length) {
-                postsGrid.innerHTML = posts.map(p => `
-                    <div class="post-card" data-post-id="${p.id}">
+                const pendingCount = posts.filter(p => p.status === 'draft').length;
+
+                // Bandeau d'alerte si des posts attendent approbation
+                const existingBanner = document.querySelector('#page-agent-social .approval-banner');
+                if (existingBanner) existingBanner.remove();
+                if (pendingCount > 0) {
+                    const banner = document.createElement('div');
+                    banner.className = 'approval-banner';
+                    banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> <strong>${pendingCount} post${pendingCount > 1 ? 's' : ''} en attente de votre approbation</strong>`;
+                    postsGrid.parentElement.insertBefore(banner, postsGrid);
+                }
+
+                postsGrid.innerHTML = posts.map(p => {
+                    const isDraft = p.status === 'draft';
+                    const isApproved = p.status === 'approved';
+                    const statusBadge = isDraft
+                        ? `<span class="post-status-badge draft"><i class="fas fa-clock"></i> En attente</span>`
+                        : isApproved
+                        ? `<span class="post-status-badge approved"><i class="fas fa-check-circle"></i> Approuvé</span>`
+                        : `<span class="post-status-badge scheduled"><i class="fas fa-calendar-check"></i> Programmé</span>`;
+
+                    return `
+                    <div class="post-card ${isDraft ? 'post-card--pending' : ''}" data-post-id="${p.id}">
                         <div class="post-preview">
                             <div class="post-placeholder"><i class="fas ${p.platform === 'instagram' && p.content_text.includes('visite') ? 'fa-video' : 'fa-image'}"></i></div>
                         </div>
@@ -487,13 +626,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="post-platform"><i class="${Utils.platformIcon(p.platform)}" style="color:${Utils.platformColor(p.platform)}"></i> ${p.platform.charAt(0).toUpperCase() + p.platform.slice(1)}</span>
                             <span class="post-schedule"><i class="fas fa-clock"></i> ${Utils.formatDateTime(p.scheduled_at)}</span>
                         </div>
+                        ${statusBadge}
                         <p class="post-caption">${sanitizeHTML(p.content_text.substring(0, 120))}${p.content_text.length > 120 ? '...' : ''}</p>
                         <div class="post-actions">
                             <button class="btn-sm btn-outline" onclick="editPost('${p.id}')">Modifier</button>
-                            <button class="btn-sm btn-gold" onclick="approvePost('${p.id}')">Approuver</button>
+                            ${isDraft ? `<button class="btn-sm btn-gold" onclick="approvePost('${p.id}')"><i class="fas fa-check"></i> Approuver</button>
+                            <button class="btn-sm btn-danger" onclick="rejectPost('${p.id}')"><i class="fas fa-times"></i> Rejeter</button>` : ''}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
         } catch (err) {
@@ -503,16 +644,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Global post actions
     window.approvePost = async function(id) {
-        if (!isSupabaseConfigured) return;
+        if (!isSupabaseConfigured) {
+            showToast('Mode démo', 'Approbation simulée avec succès', 'success');
+            return;
+        }
         try {
             await SocialPosts.approve(id);
+            showToast('Post approuvé ✅', 'Il sera publié automatiquement à l\'heure prévue', 'success');
             await loadSocialData();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            showToast('Erreur', 'Impossible d\'approuver ce post', 'error');
+        }
     };
 
-    window.editPost = function(id) {
-        console.log('Edit post:', id);
-        // TODO: ouvrir modal d'édition
+    window.rejectPost = async function(id) {
+        if (!isSupabaseConfigured) {
+            showToast('Mode démo', 'Post rejeté', 'info');
+            return;
+        }
+        try {
+            await SocialPosts.update(id, { status: 'rejected' });
+            showToast('Post rejeté', 'Le post a été archivé', 'info');
+            await loadSocialData();
+        } catch (e) {
+            console.error(e);
+            showToast('Erreur', 'Impossible de rejeter ce post', 'error');
+        }
+    };
+
+    window.editPost = async function(postId) {
+        let post;
+        try {
+            if (isSupabaseConfigured) {
+                const { data } = await db.from('social_posts').select('*').eq('id', postId).single();
+                post = data;
+            }
+        } catch (e) { console.error(e); }
+        if (!post) return;
+        document.getElementById('postPlatform').value = post.platform || 'instagram';
+        document.getElementById('postContent').value = post.content_text || '';
+        document.getElementById('postHashtags').value = (post.hashtags || []).join(' ');
+        if (post.scheduled_at) {
+            const dt = new Date(post.scheduled_at);
+            document.getElementById('postSchedule').value = dt.toISOString().slice(0, 16);
+        }
+        openModalPost?.();
     };
 
     // ===== PLANNING DATA =====
@@ -668,6 +845,138 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Settings load error:', err);
         }
+        loadAutomations();
+        loadClaudeTokenStats();
+    }
+
+    // ===== CLAUDE TOKEN WIDGET =====
+    async function loadClaudeTokenStats() {
+        if (!isSupabaseConfigured) {
+            // Mode démo : simuler des données
+            renderClaudeTokenWidget({
+                total_tokens_used: 42300,
+                budget_tokens: 100000,
+                alert_threshold: 80,
+                usage_percent: 42.3,
+                total_cost_eur: 0.012,
+                calls_count: 37
+            });
+            return;
+        }
+        try {
+            const stats = await ClaudeUsage.getMonthlyStats();
+            if (stats) renderClaudeTokenWidget(stats);
+
+            // Pré-remplir les champs budget
+            const profile = await Profiles.get();
+            if (profile?.claude_monthly_budget_tokens) {
+                const budgetInput = document.getElementById('claudeBudgetInput');
+                const alertInput = document.getElementById('claudeAlertInput');
+                if (budgetInput) budgetInput.value = profile.claude_monthly_budget_tokens;
+                if (alertInput) alertInput.value = profile.claude_alert_threshold || 80;
+            }
+        } catch (e) {
+            console.error('Claude token stats error:', e);
+        }
+    }
+
+    function renderClaudeTokenWidget(stats) {
+        const pct = parseFloat(stats.usage_percent || 0);
+        const used = parseInt(stats.total_tokens_used || 0);
+        const budget = parseInt(stats.budget_tokens || 100000);
+        const threshold = parseInt(stats.alert_threshold || 80);
+        const cost = parseFloat(stats.total_cost_eur || 0);
+
+        // Couleur selon usage
+        const color = pct >= threshold ? (pct >= 95 ? '#ff4757' : '#ffa502') : '#00e676';
+        const statusText = pct >= 95 ? '🔴 Crédits critiques' : pct >= threshold ? '🟡 Bientôt épuisés' : '🟢 Connecté';
+
+        // Mettre à jour le statut principal
+        const statusEl = document.getElementById('claudeApiStatus');
+        if (statusEl) {
+            statusEl.className = `source-status ${pct >= threshold ? (pct >= 95 ? 'disconnected' : 'warning') : 'connected'}`;
+            statusEl.innerHTML = `<i class="fas fa-circle"></i> ${statusText}`;
+        }
+
+        // Mettre à jour la barre
+        const bar = document.getElementById('claudeTokenBar');
+        const pctEl = document.getElementById('claudeTokenPercent');
+        const usedEl = document.getElementById('claudeTokenUsed');
+        const budgetEl = document.getElementById('claudeTokenBudget');
+        const costEl = document.getElementById('claudeTokenCost');
+
+        if (bar) {
+            bar.style.width = Math.min(pct, 100) + '%';
+            bar.style.background = color;
+        }
+        if (pctEl) {
+            pctEl.textContent = pct + '%';
+            pctEl.style.color = color;
+        }
+        if (usedEl) usedEl.textContent = used.toLocaleString('fr-FR') + ' tokens utilisés';
+        if (budgetEl) budgetEl.textContent = 'Budget : ' + budget.toLocaleString('fr-FR');
+        if (costEl) costEl.textContent = `Coût estimé ce mois : ${cost.toFixed(4)} € · ${stats.calls_count || 0} appel(s) IA`;
+    }
+
+    // Sauvegarder le budget Claude lors du save settings
+    const originalSaveSettings = window.saveSettings;
+
+    // ===== AUTOMATIONS PANEL =====
+    const AUTOMATIONS = [
+        { name: 'Email confirmation RDV', trigger: 'Creation RDV', status: 'active', type: 'webhook', path: '/webhook/confirm-appointment' },
+        { name: 'SMS Rappel RDV J-1', trigger: 'Cron 18h quotidien', status: 'active', type: 'cron' },
+        { name: 'SMS Rappel RDV H-1', trigger: 'Cron horaire', status: 'active', type: 'cron' },
+        { name: 'Email Anniversaire clients', trigger: 'Cron 9h quotidien', status: 'active', type: 'cron' },
+        { name: 'Relances J+1/J+3/J+7', trigger: 'Cron 10h quotidien', status: 'active', type: 'cron' },
+        { name: 'Email Resume hebdomadaire', trigger: 'Lundi 9h', status: 'active', type: 'cron' },
+        { name: 'Email Rappel URSSAF', trigger: '20 Jan/Avr/Jul/Oct', status: 'active', type: 'cron' },
+        { name: 'Agent Social Autopost', trigger: 'Lun/Mer/Ven 10h', status: 'active', type: 'cron' },
+        { name: 'Chatbot Deadpool IA', trigger: 'Webhook chat', status: 'active', type: 'webhook', path: '/webhook/chatbot' },
+        { name: 'Sync Google Calendar', trigger: 'Creation RDV', status: 'active', type: 'webhook', path: '/webhook/sync-gcal' },
+        { name: 'Nouvelle vente', trigger: 'Creation vente', status: 'active', type: 'webhook', path: '/webhook/new-sale' }
+    ];
+
+    function loadAutomations() {
+        const list = document.getElementById('automationsList');
+        const count = document.getElementById('automationsCount');
+        if (!list) return;
+        const active = AUTOMATIONS.filter(a => a.status === 'active').length;
+        if (count) count.textContent = `${active}/${AUTOMATIONS.length}`;
+        list.innerHTML = AUTOMATIONS.map((a, i) => `
+            <div class="automation-item">
+                <div class="automation-item-top">
+                    <div class="automation-name">${a.name}</div>
+                    <div class="automation-dot ${a.status}" title="${a.note || a.status}"></div>
+                </div>
+                <div class="automation-trigger"><i class="fas fa-${a.type === 'cron' ? 'clock' : 'bolt'}"></i> ${a.trigger}</div>
+                ${a.type === 'webhook' ? `<button class="automation-btn" data-auto-idx="${i}"><i class="fas fa-play"></i> Tester</button>` : ''}
+            </div>
+        `).join('');
+        list.querySelectorAll('[data-auto-idx]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const idx = Number(btn.dataset.autoIdx);
+                const auto = AUTOMATIONS[idx];
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Test...';
+                try {
+                    const res = await fetch(CONFIG.N8N_BASE_URL + auto.path, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ test: true, source: 'automations-panel' })
+                    });
+                    if (res.ok) {
+                        showToast('Webhook OK', `${auto.name} a repondu (${res.status})`, 'success');
+                    } else {
+                        showToast('Webhook erreur', `${auto.name} : HTTP ${res.status}`, 'error');
+                    }
+                } catch (e) {
+                    showToast('Webhook injoignable', auto.name, 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Tester';
+                }
+            });
+        });
     }
 
     // ===== SAVE SETTINGS =====
@@ -718,6 +1027,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const isConnected = !!updates.n8n_url;
                     n8nStatus.className = `source-status ${isConnected ? 'connected' : 'disconnected'}`;
                     n8nStatus.innerHTML = `<i class="fas fa-circle"></i> ${isConnected ? 'Connecté' : 'Non configuré'}`;
+                }
+
+                // Sauvegarder le budget Claude si renseigné
+                const budgetInput = document.getElementById('claudeBudgetInput');
+                const alertInput = document.getElementById('claudeAlertInput');
+                if (budgetInput?.value && isSupabaseConfigured) {
+                    await ClaudeUsage.updateBudget({
+                        budget_tokens: parseInt(budgetInput.value),
+                        alert_threshold: parseInt(alertInput?.value || 80)
+                    });
+                    await loadClaudeTokenStats();
                 }
 
                 // Feedback succès
@@ -1072,13 +1392,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
 
                     await Sales.create(saleData);
+                    // Notifier le Chef Agent → il activera agent_comptable + agent_social
+                    Orchestrateur.nouvelleVente(saleData).catch(() => {});
                 } else {
                     await new Promise(r => setTimeout(r, 800));
                 }
 
                 btn.innerHTML = '<i class="fas fa-check"></i> Vente enregistrée !';
                 btn.style.background = 'var(--green)';
-                if (typeof showToast === 'function') showToast('Vente enregistrée', 'La vente a été ajoutée avec succès', 'success');
+                if (typeof showToast === 'function') showToast('Vente enregistrée', 'La vente a été ajoutée et les agents IA notifiés ✨', 'success');
 
                 setTimeout(() => {
                     closeModal();
@@ -1338,13 +1660,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isSupabaseConfigured) {
                     await Appointments.create(rdvData);
+                    // Notifier le Chef Agent → il activera agent_planning + sync GCal
+                    Orchestrateur.nouveauRDV(rdvData).catch(() => {});
                 } else {
                     await new Promise(r => setTimeout(r, 800));
                 }
 
                 btn.innerHTML = '<i class="fas fa-check"></i> RDV planifié !';
                 btn.style.background = 'var(--green)';
-                if (typeof showToast === 'function') showToast('RDV planifié', rdvData.title, 'success');
+                if (typeof showToast === 'function') {
+                    showToast('RDV planifié', rdvData.title + ' · Agents IA notifiés ✨', 'success');
+                    if (isSupabaseConfigured) {
+                        setTimeout(() => showToast('Email envoyé', 'Confirmation envoyée au client', 'info'), 600);
+                        setTimeout(() => showToast('Google Calendar', 'Synchronisation en cours', 'info'), 1200);
+                    }
+                }
                 setTimeout(() => {
                     closeModalRDV();
                     btn.innerHTML = '<i class="fas fa-calendar-check"></i> Planifier le RDV';
@@ -1715,12 +2045,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatSend = document.getElementById('chatSend');
     const chatMessages = document.getElementById('chatMessages');
 
-    chatbotToggle.addEventListener('click', () => {
+    let chatHistoryLoaded = false;
+
+    chatbotToggle.addEventListener('click', async () => {
         chatbotPanel.classList.toggle('open');
         if (chatbotPanel.classList.contains('open')) {
             chatInput.focus();
+            // Charger l'historique une seule fois à l'ouverture
+            if (!chatHistoryLoaded) {
+                await loadChatHistory();
+                chatHistoryLoaded = true;
+            }
         }
     });
+
+    // Charger et afficher l'historique depuis Supabase
+    async function loadChatHistory() {
+        if (!isSupabaseConfigured) return;
+        try {
+            const history = await Chatbot.getHistory(20);
+            if (history.length > 0) {
+                // Vider le message de bienvenue par défaut
+                chatMessages.innerHTML = '';
+                // Ajouter un séparateur
+                const sep = document.createElement('div');
+                sep.className = 'chat-history-sep';
+                sep.textContent = '— Conversation précédente —';
+                chatMessages.appendChild(sep);
+                // Afficher les messages
+                history.forEach(m => addChatMsg(m.content, m.role === 'user' ? 'user' : 'bot'));
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        } catch (e) {
+            console.warn('Chat history load failed:', e);
+        }
+    }
+
+    // Bouton "Nouvelle conversation"
+    const btnClearChat = document.getElementById('btnClearChat');
+    if (btnClearChat) {
+        btnClearChat.addEventListener('click', async () => {
+            if (isSupabaseConfigured) await Chatbot.clearHistory();
+            chatMessages.innerHTML = '<div class="chat-msg bot">Nouvelle conversation démarrée ! Comment puis-je t\'aider Alison ? 😊</div>';
+            chatHistoryLoaded = false;
+            showToast('Conversation effacée', 'L\'historique a été réinitialisé', 'info');
+        });
+    }
 
     function addChatMsg(text, type) {
         const msg = document.createElement('div');

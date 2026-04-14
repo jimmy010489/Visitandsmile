@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/futuristic.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg==" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
 <body>
     <!-- PWA Splash Screen -->
@@ -54,11 +54,11 @@
             <form class="login-form" id="loginForm">
                 <div class="login-field">
                     <label><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="loginEmail" value="alison@visitandsmile.fr" autocomplete="off">
+                    <input type="email" id="loginEmail" placeholder="votre@email.fr" autocomplete="email">
                 </div>
                 <div class="login-field">
                     <label><i class="fas fa-lock"></i> Mot de passe</label>
-                    <input type="password" id="loginPassword" value="demo2024" autocomplete="off">
+                    <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
                 </div>
                 <button type="submit" class="login-btn">
                     <span>Se connecter</span>
