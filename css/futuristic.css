@@ -1,0 +1,768 @@
+/* ============================================================
+   VISIT & SMILE — FUTURISTIC OVERLAY
+   Cyber · Holographic · Neural Interface
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+/* ===== EXTENDED PALETTE ===== */
+:root {
+  --cyber-cyan:    #00f5ff;
+  --cyber-cyan-dim: rgba(0,245,255,0.08);
+  --cyber-cyan-glow: rgba(0,245,255,0.3);
+  --cyber-blue:    #0066ff;
+  --cyber-blue-dim: rgba(0,102,255,0.08);
+  --neon-purple:   #bf00ff;
+  --neon-purple-dim: rgba(191,0,255,0.08);
+  --gold-hot:      #ffcc00;
+  --plasma:        #ff6b35;
+
+  --glass-bg:      rgba(8,8,18,0.75);
+  --glass-border:  rgba(0,245,255,0.12);
+  --glass-glow:    rgba(0,245,255,0.06);
+
+  --holo-gradient: linear-gradient(135deg,
+    #00f5ff 0%, #0066ff 25%, #bf00ff 50%, #d4a931 75%, #00f5ff 100%);
+  --cyber-gradient: linear-gradient(90deg, #00f5ff, #0066ff, #bf00ff);
+  --gold-gradient:  linear-gradient(90deg, #a07d1a, #d4a931, #f0cc50, #d4a931, #a07d1a);
+}
+
+/* ============================================================
+   BACKGROUND — DEEP SPACE + AURORA
+   ============================================================ */
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(0,102,255,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(191,0,255,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(0,245,255,0.03) 0%, transparent 70%),
+    #030306;
+  animation: auroraPulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes auroraPulse {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 100%; }
+}
+
+/* Grid futuriste avec double fréquence */
+body::before {
+  background-image:
+    linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px),
+    linear-gradient(rgba(0,245,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.012) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
+  animation: gridPulse 20s linear infinite;
+}
+
+@keyframes gridPulse {
+  0%   { background-position: 0 0, 0 0, 0 0, 0 0; opacity: 0.7; }
+  50%  { opacity: 1; }
+  100% { background-position: 60px 60px, 60px 60px, 12px 12px, 12px 12px; opacity: 0.7; }
+}
+
+/* ============================================================
+   SIDEBAR — HOLOGRAPHIC PANEL
+   ============================================================ */
+.sidebar {
+  background: linear-gradient(180deg,
+    rgba(0,8,30,0.97) 0%,
+    rgba(0,4,18,0.99) 100%);
+  border-right: 1px solid rgba(0,245,255,0.1);
+  box-shadow:
+    4px 0 30px rgba(0,245,255,0.05),
+    inset -1px 0 0 rgba(0,245,255,0.06);
+}
+
+/* Cyan accent line on sidebar */
+.sidebar::after {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0,245,255,0.3) 20%,
+    var(--cyber-cyan) 50%,
+    rgba(0,245,255,0.3) 80%,
+    transparent 100%
+  );
+  opacity: 0.6;
+}
+
+/* HUD corner brackets — cyan */
+.sidebar-header::before,
+.sidebar-header::after {
+  border-color: var(--cyber-cyan);
+  opacity: 0.6;
+  width: 14px; height: 14px;
+  filter: drop-shadow(0 0 4px var(--cyber-cyan));
+}
+
+/* ===== LOGO ===== */
+.logo-name {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  background: linear-gradient(90deg, var(--gold-hot), #fff 50%, var(--cyber-cyan)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 0 8px rgba(0,245,255,0.3));
+}
+
+.logo-sub {
+  font-family: 'Orbitron', sans-serif !important;
+  font-size: 0.6rem !important;
+  color: var(--cyber-cyan) !important;
+  letter-spacing: 0.35em !important;
+  opacity: 0.8;
+}
+
+.logo-icon {
+  background: linear-gradient(135deg, rgba(0,245,255,0.15), rgba(0,102,255,0.2)) !important;
+  border: 1px solid rgba(0,245,255,0.3) !important;
+  box-shadow:
+    0 0 20px rgba(0,245,255,0.15),
+    0 0 40px rgba(0,245,255,0.05),
+    inset 0 0 20px rgba(0,245,255,0.05) !important;
+  animation: iconPulse 3s ease-in-out infinite !important;
+}
+
+@keyframes iconPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,245,255,0.15), 0 0 40px rgba(0,245,255,0.05), inset 0 0 20px rgba(0,245,255,0.05); }
+  50%       { box-shadow: 0 0 30px rgba(0,245,255,0.3),  0 0 60px rgba(0,245,255,0.1),  inset 0 0 30px rgba(0,245,255,0.1); }
+}
+
+/* ===== NAV ITEMS ===== */
+.nav-item {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(0,245,255,0.15), transparent);
+  transition: width 0.3s ease;
+}
+
+.nav-item:hover::before,
+.nav-item.active::before {
+  width: 100%;
+}
+
+.nav-item.active {
+  background: rgba(0,245,255,0.07) !important;
+  border-left: 2px solid var(--cyber-cyan) !important;
+  box-shadow: inset 4px 0 20px rgba(0,245,255,0.08) !important;
+}
+
+.nav-item.active .nav-text {
+  color: var(--cyber-cyan) !important;
+  text-shadow: 0 0 15px rgba(0,245,255,0.5) !important;
+  font-weight: 600 !important;
+}
+
+.nav-item.active .nav-icon {
+  color: var(--cyber-cyan) !important;
+  filter: drop-shadow(0 0 6px rgba(0,245,255,0.7)) !important;
+}
+
+.nav-item:hover .nav-text {
+  color: #fff !important;
+  text-shadow: 0 0 10px rgba(0,245,255,0.3) !important;
+}
+
+/* ===== STATUS BADGES ===== */
+.status-badge, .badge-on {
+  background: rgba(0,245,255,0.1) !important;
+  color: var(--cyber-cyan) !important;
+  border: 1px solid rgba(0,245,255,0.3) !important;
+  box-shadow: 0 0 8px rgba(0,245,255,0.2) !important;
+  font-family: 'Orbitron', sans-serif !important;
+  font-size: 0.5rem !important;
+  letter-spacing: 0.1em !important;
+  animation: badgePulse 2s ease-in-out infinite !important;
+}
+
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; box-shadow: 0 0 15px rgba(0,245,255,0.35) !important; }
+}
+
+/* User profile */
+.sidebar-profile {
+  background: rgba(0,245,255,0.04) !important;
+  border-top: 1px solid rgba(0,245,255,0.08) !important;
+}
+
+.profile-avatar {
+  background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,102,255,0.2)) !important;
+  border: 1px solid rgba(0,245,255,0.3) !important;
+  box-shadow: 0 0 15px rgba(0,245,255,0.15) !important;
+  color: var(--cyber-cyan) !important;
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar {
+  background: rgba(0,4,18,0.9) !important;
+  border-bottom: 1px solid rgba(0,245,255,0.08) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  box-shadow: 0 1px 30px rgba(0,245,255,0.04) !important;
+}
+
+.search-bar {
+  background: rgba(0,245,255,0.04) !important;
+  border: 1px solid rgba(0,245,255,0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.search-bar:focus-within {
+  background: rgba(0,245,255,0.07) !important;
+  border-color: rgba(0,245,255,0.3) !important;
+  box-shadow: 0 0 20px rgba(0,245,255,0.1), inset 0 0 20px rgba(0,245,255,0.03) !important;
+}
+
+.search-bar input::placeholder {
+  color: rgba(0,245,255,0.3) !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ============================================================
+   SECTION TITLES
+   ============================================================ */
+.section-title, .page-title {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+  background: linear-gradient(90deg, #ffffff 0%, var(--cyber-cyan) 50%, #ffffff 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  background-size: 200% 100% !important;
+  animation: titleShimmer 4s linear infinite !important;
+}
+
+@keyframes titleShimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.section-sub, .page-sub {
+  font-family: 'Rajdhani', sans-serif !important;
+  letter-spacing: 0.25em !important;
+  color: rgba(0,245,255,0.5) !important;
+  text-transform: uppercase !important;
+}
+
+/* ============================================================
+   KPI CARDS — HOLOGRAPHIC
+   ============================================================ */
+.kpi-card, .metric-card, .stat-card {
+  background: var(--glass-bg) !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+
+  background-clip: padding-box !important;
+  box-shadow:
+    0 0 0 1px rgba(0,245,255,0.1),
+    0 4px 30px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+
+/* Animated holographic border */
+.kpi-card::before, .metric-card::before, .stat-card::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 9px !important;
+  background: var(--holo-gradient) !important;
+  background-size: 300% 300% !important;
+  z-index: -1 !important;
+  animation: holoBorder 4s linear infinite !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.kpi-card:hover::before,
+.metric-card:hover::before,
+.stat-card:hover::before {
+  opacity: 1 !important;
+}
+
+@keyframes holoBorder {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Scan line sweep on hover */
+.kpi-card::after, .metric-card::after, .stat-card::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60% !important;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,245,255,0.04) 50%, transparent 100%) !important;
+  transition: top 0.6s ease !important;
+  pointer-events: none !important;
+}
+
+.kpi-card:hover::after,
+.metric-card:hover::after,
+.stat-card:hover::after {
+  top: 100% !important;
+}
+
+.kpi-card:hover, .metric-card:hover, .stat-card:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,245,255,0.3),
+    0 8px 40px rgba(0,0,0,0.6),
+    0 0 30px rgba(0,245,255,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+/* KPI Value — neon number */
+.kpi-value, .metric-value, .stat-value {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  text-shadow:
+    0 0 10px rgba(0,245,255,0.5),
+    0 0 30px rgba(0,245,255,0.2) !important;
+  letter-spacing: 0.05em !important;
+}
+
+.kpi-label, .metric-label, .stat-label {
+  font-family: 'Rajdhani', sans-serif !important;
+  letter-spacing: 0.2em !important;
+  font-size: 0.7rem !important;
+  color: rgba(0,245,255,0.6) !important;
+  text-transform: uppercase !important;
+}
+
+/* KPI icon */
+.kpi-icon, .metric-icon, .stat-icon {
+  background: rgba(0,245,255,0.08) !important;
+  border: 1px solid rgba(0,245,255,0.2) !important;
+  box-shadow:
+    0 0 15px rgba(0,245,255,0.1),
+    inset 0 0 10px rgba(0,245,255,0.05) !important;
+  color: var(--cyber-cyan) !important;
+  border-radius: 8px !important;
+  position: relative !important;
+}
+
+/* Trend badges */
+.trend-up, .kpi-trend.positive {
+  color: #00ff88 !important;
+  background: rgba(0,255,136,0.08) !important;
+  border: 1px solid rgba(0,255,136,0.2) !important;
+  box-shadow: 0 0 8px rgba(0,255,136,0.15) !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.trend-down, .kpi-trend.negative {
+  color: #ff4466 !important;
+  background: rgba(255,68,102,0.08) !important;
+  border: 1px solid rgba(255,68,102,0.2) !important;
+  box-shadow: 0 0 8px rgba(255,68,102,0.15) !important;
+}
+
+/* ============================================================
+   CONTENT CARDS / PANELS
+   ============================================================ */
+.card, .panel, .content-card, .chart-container,
+.agent-card, .client-card, .appointment-card {
+  background: rgba(4,8,24,0.8) !important;
+  border: 1px solid rgba(0,245,255,0.07) !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow:
+    0 4px 30px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(0,245,255,0.04) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.card:hover, .panel:hover, .content-card:hover,
+.agent-card:hover, .client-card:hover {
+  border-color: rgba(0,245,255,0.15) !important;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.5),
+    0 0 20px rgba(0,245,255,0.05),
+    inset 0 1px 0 rgba(0,245,255,0.06) !important;
+}
+
+/* Top accent line on cards */
+.card::before, .panel::before, .content-card::before,
+.chart-container::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0; left: 10%; right: 10% !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(0,245,255,0.4), transparent) !important;
+  pointer-events: none !important;
+}
+
+/* ============================================================
+   CHART SECTIONS
+   ============================================================ */
+.chart-title, .section-header h3, .card-header h3 {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+  color: rgba(0,245,255,0.9) !important;
+  text-transform: uppercase !important;
+  font-size: 0.82rem !important;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary, .btn-gold {
+  font-family: 'Orbitron', sans-serif !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  background: linear-gradient(135deg, rgba(0,102,255,0.3), rgba(0,245,255,0.2)) !important;
+  border: 1px solid rgba(0,245,255,0.4) !important;
+  color: var(--cyber-cyan) !important;
+  box-shadow:
+    0 0 15px rgba(0,245,255,0.1),
+    inset 0 0 15px rgba(0,245,255,0.03) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn-primary::before, .btn-gold::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0; left: -100% !important;
+  width: 100%; height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(0,245,255,0.15), transparent) !important;
+  transition: left 0.5s ease !important;
+}
+
+.btn-primary:hover::before, .btn-gold:hover::before {
+  left: 100% !important;
+}
+
+.btn-primary:hover, .btn-gold:hover {
+  background: linear-gradient(135deg, rgba(0,102,255,0.5), rgba(0,245,255,0.3)) !important;
+  border-color: var(--cyber-cyan) !important;
+  box-shadow:
+    0 0 25px rgba(0,245,255,0.25),
+    0 0 50px rgba(0,245,255,0.1),
+    inset 0 0 20px rgba(0,245,255,0.05) !important;
+  transform: translateY(-1px) !important;
+  color: #fff !important;
+}
+
+/* FAB (floating action button) */
+.fab-main, .fab-btn {
+  background: linear-gradient(135deg, #0040cc, #0088ff) !important;
+  border: 1px solid rgba(0,245,255,0.5) !important;
+  box-shadow:
+    0 0 30px rgba(0,136,255,0.4),
+    0 0 60px rgba(0,136,255,0.15) !important;
+  animation: fabGlow 2.5s ease-in-out infinite !important;
+}
+
+@keyframes fabGlow {
+  0%, 100% { box-shadow: 0 0 30px rgba(0,136,255,0.4), 0 0 60px rgba(0,136,255,0.15); }
+  50%       { box-shadow: 0 0 40px rgba(0,245,255,0.5), 0 0 80px rgba(0,245,255,0.2); }
+}
+
+/* AI Chat FAB */
+.ai-fab, .chatbot-fab, [class*="chat-fab"], [class*="deadpool-fab"] {
+  background: linear-gradient(135deg, #4400aa, #8800ff) !important;
+  border: 1px solid rgba(191,0,255,0.5) !important;
+  box-shadow:
+    0 0 30px rgba(191,0,255,0.4),
+    0 0 60px rgba(191,0,255,0.15) !important;
+  animation: aiFabGlow 3s ease-in-out infinite !important;
+}
+
+@keyframes aiFabGlow {
+  0%, 100% { box-shadow: 0 0 30px rgba(191,0,255,0.4), 0 0 60px rgba(191,0,255,0.15); }
+  50%       { box-shadow: 0 0 45px rgba(0,245,255,0.5), 0 0 90px rgba(0,245,255,0.2); }
+}
+
+/* ============================================================
+   ALERT / NOTIFICATION BAR
+   ============================================================ */
+.alert-bar, .welcome-bar, .notification-bar, [class*="deadpool-bar"],
+[class*="message-bar"], [class*="tip-bar"] {
+  background: linear-gradient(90deg,
+    rgba(0,8,30,0.95) 0%,
+    rgba(0,20,60,0.9) 50%,
+    rgba(0,8,30,0.95) 100%) !important;
+  border: 1px solid rgba(0,245,255,0.12) !important;
+  border-left: 3px solid var(--cyber-cyan) !important;
+  box-shadow:
+    0 0 20px rgba(0,245,255,0.06),
+    inset 0 0 30px rgba(0,245,255,0.02) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* ============================================================
+   STATUS INDICATORS
+   ============================================================ */
+.status-dot, .online-dot {
+  background: var(--cyber-cyan) !important;
+  box-shadow: 0 0 8px var(--cyber-cyan), 0 0 16px rgba(0,245,255,0.5) !important;
+  animation: dotPulse 2s ease-in-out infinite !important;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 8px var(--cyber-cyan), 0 0 16px rgba(0,245,255,0.5); }
+  50%       { transform: scale(1.2); box-shadow: 0 0 12px var(--cyber-cyan), 0 0 24px rgba(0,245,255,0.7); }
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+table, .data-table {
+  border-collapse: separate !important;
+  border-spacing: 0 4px !important;
+}
+
+thead th {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2em !important;
+  color: rgba(0,245,255,0.6) !important;
+  text-transform: uppercase !important;
+  font-size: 0.7rem !important;
+  border-bottom: 1px solid rgba(0,245,255,0.1) !important;
+  background: rgba(0,245,255,0.03) !important;
+}
+
+tbody tr {
+  background: rgba(4,8,24,0.6) !important;
+  transition: all 0.2s ease !important;
+}
+
+tbody tr:hover {
+  background: rgba(0,245,255,0.04) !important;
+  box-shadow: inset 0 0 20px rgba(0,245,255,0.04), 0 0 0 1px rgba(0,245,255,0.08) !important;
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+input, select, textarea {
+  background: rgba(0,8,30,0.8) !important;
+  border: 1px solid rgba(0,245,255,0.1) !important;
+  color: #fff !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  transition: all 0.3s ease !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(0,245,255,0.4) !important;
+  box-shadow:
+    0 0 20px rgba(0,245,255,0.08),
+    0 0 0 3px rgba(0,245,255,0.05) !important;
+  outline: none !important;
+}
+
+/* ============================================================
+   MODAL / DIALOGS
+   ============================================================ */
+.modal, .dialog, [class*="modal"] {
+  background: rgba(2,5,20,0.97) !important;
+  border: 1px solid rgba(0,245,255,0.12) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,245,255,0.06),
+    0 20px 80px rgba(0,0,0,0.8),
+    0 0 60px rgba(0,245,255,0.06) !important;
+  backdrop-filter: blur(40px) !important;
+}
+
+.modal-header, [class*="modal-header"] {
+  border-bottom: 1px solid rgba(0,245,255,0.08) !important;
+  background: rgba(0,245,255,0.03) !important;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(0,102,255,0.5), var(--cyber-cyan)) !important;
+  box-shadow: 0 0 6px rgba(0,245,255,0.3) !important;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0,245,255,0.02) !important;
+}
+
+/* ============================================================
+   SECTION SEPARATOR LABELS
+   ============================================================ */
+.nav-section-label {
+  font-family: 'Orbitron', sans-serif !important;
+  font-size: 0.55rem !important;
+  letter-spacing: 0.3em !important;
+  color: rgba(0,245,255,0.3) !important;
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast, [class*="toast"], [class*="notification-toast"] {
+  background: rgba(2,8,30,0.95) !important;
+  border: 1px solid rgba(0,245,255,0.2) !important;
+  box-shadow:
+    0 0 30px rgba(0,245,255,0.1),
+    0 10px 40px rgba(0,0,0,0.6) !important;
+  backdrop-filter: blur(30px) !important;
+}
+
+/* ============================================================
+   AGENT STATUS CARDS
+   ============================================================ */
+[class*="agent-status"], [class*="agent-card"] {
+  position: relative !important;
+}
+
+[class*="agent-status"]::after, [class*="agent-card"]::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0; left: 0; right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, transparent, var(--cyber-cyan), transparent) !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+[class*="agent-status"]:hover::after, [class*="agent-card"]:hover::after {
+  opacity: 1 !important;
+}
+
+/* ============================================================
+   PROGRESS / LOADING BARS
+   ============================================================ */
+.progress-bar, [class*="progress"] {
+  background: rgba(0,245,255,0.08) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+}
+
+.progress-fill, [class*="progress-fill"] {
+  background: linear-gradient(90deg, rgba(0,102,255,0.8), var(--cyber-cyan)) !important;
+  box-shadow: 0 0 10px rgba(0,245,255,0.4) !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.progress-fill::after, [class*="progress-fill"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0; left: -100% !important;
+  width: 100%; height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
+  animation: progressShine 2s linear infinite !important;
+}
+
+@keyframes progressShine {
+  0%   { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ============================================================
+   SELECTION & HIGHLIGHTS
+   ============================================================ */
+::selection {
+  background: rgba(0,245,255,0.2) !important;
+  color: var(--cyber-cyan) !important;
+}
+
+/* ============================================================
+   GLOW TEXT EFFECTS for key headings
+   ============================================================ */
+h1, .h1 {
+  font-family: 'Orbitron', sans-serif !important;
+  letter-spacing: 0.15em !important;
+}
+
+/* ============================================================
+   CYBER DECORATIVE CORNERS on specific sections
+   ============================================================ */
+.main-content > .page-header,
+[class*="page-header"],
+[class*="dashboard-header"] {
+  position: relative !important;
+}
+
+/* ============================================================
+   CHARTS — enhance bar colors
+   ============================================================ */
+/* Chart.js and custom SVG bars get cyber colors via CSS filters */
+canvas {
+  filter: drop-shadow(0 0 4px rgba(0,245,255,0.15)) !important;
+}
+
+/* ============================================================
+   LOGIN PAGE — HOLOGRAPHIC
+   ============================================================ */
+.login-card, .auth-card, [class*="login-card"], [class*="auth-card"] {
+  background: rgba(2,5,20,0.9) !important;
+  border: 1px solid rgba(0,245,255,0.12) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,245,255,0.06),
+    0 30px 80px rgba(0,0,0,0.7),
+    0 0 80px rgba(0,245,255,0.05) !important;
+  backdrop-filter: blur(40px) !important;
+}
+
+/* ============================================================
+   BREATHING AMBIENT GLOW — corners of screen
+   ============================================================ */
+.main-content, #app, .app-layout {
+  position: relative !important;
+}
+
+.main-content::before, #main::before {
+  content: '' !important;
+  position: fixed !important;
+  top: 0; right: 0 !important;
+  width: 400px; height: 400px !important;
+  background: radial-gradient(ellipse, rgba(191,0,255,0.04) 0%, transparent 70%) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  animation: ambientPulse 8s ease-in-out infinite alternate !important;
+}
+
+@keyframes ambientPulse {
+  0%   { opacity: 0.5; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.3); }
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 768px) {
+  .logo-name { font-size: 0.9rem !important; }
+  .kpi-value  { font-size: 1.4rem !important; }
+}
