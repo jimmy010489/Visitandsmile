@@ -16,12 +16,12 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_config?connected=eq.true&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "url": "={{ https://zbzicommpdsvkesqzyvb.supabase.co }}/rest/v1/social_config?connected=eq.true&user_id=eq.{{ fa832096-ef0a-4f6e-8136-7de3e5b00a4d }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+            { "name": "apikey", "value": "={{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
+            { "name": "Authorization", "value": "Bearer {{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" }
           ]
         }
       },
@@ -34,12 +34,12 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/sales?order=sale_date.desc&limit=3&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "url": "={{ https://zbzicommpdsvkesqzyvb.supabase.co }}/rest/v1/sales?order=sale_date.desc&limit=3&user_id=eq.{{ fa832096-ef0a-4f6e-8136-7de3e5b00a4d }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+            { "name": "apikey", "value": "={{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
+            { "name": "Authorization", "value": "Bearer {{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" }
           ]
         }
       },
@@ -74,7 +74,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\nlet content;\ntry {\n  const text = response.content[0].text;\n  content = JSON.parse(text);\n} catch(e) {\n  content = {\n    platform: 'instagram',\n    content_text: response.content[0].text,\n    hashtags: ['#immobilier', '#orleans', '#visitandsmile'],\n    format_type: 'post'\n  };\n}\n\n// Programmer pour le prochain créneau optimal\nconst now = new Date();\nconst scheduled = new Date(now);\nscheduled.setHours(12, 30, 0, 0);\nif (scheduled <= now) {\n  scheduled.setDate(scheduled.getDate() + 1);\n}\n\nreturn [{\n  json: {\n    ...content,\n    user_id: $env.ALISON_USER_ID,\n    scheduled_at: scheduled.toISOString(),\n    status: 'scheduled'\n  }\n}];"
+        "jsCode": "const response = $input.first().json;\nlet content;\ntry {\n  const text = response.content[0].text;\n  content = JSON.parse(text);\n} catch(e) {\n  content = {\n    platform: 'instagram',\n    content_text: response.content[0].text,\n    hashtags: ['#immobilier', '#orleans', '#visitandsmile'],\n    format_type: 'post'\n  };\n}\n\n// Programmer pour le prochain créneau optimal\nconst now = new Date();\nconst scheduled = new Date(now);\nscheduled.setHours(12, 30, 0, 0);\nif (scheduled <= now) {\n  scheduled.setDate(scheduled.getDate() + 1);\n}\n\nreturn [{\n  json: {\n    ...content,\n    user_id: fa832096-ef0a-4f6e-8136-7de3e5b00a4d,\n    scheduled_at: scheduled.toISOString(),\n    status: 'scheduled'\n  }\n}];"
       },
       "name": "Parse & Schedule",
       "type": "n8n-nodes-base.code",
@@ -85,12 +85,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_posts",
+        "url": "={{ https://zbzicommpdsvkesqzyvb.supabase.co }}/rest/v1/social_posts",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "apikey", "value": "={{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
+            { "name": "Authorization", "value": "Bearer {{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=representation" }
           ]
@@ -134,12 +134,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://graph.facebook.com/v18.0/{{ $env.FB_PAGE_ID }}/feed",
+        "url": "https://graph.facebook.com/v18.0/{{ VOTRE_FB_PAGE_ID_ICI }}/feed",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             { "name": "message", "value": "={{ $json.body.content_text }}\n\n{{ ($json.body.hashtags || []).join(' ') }}" },
-            { "name": "access_token", "value": "={{ $env.FB_PAGE_TOKEN }}" }
+            { "name": "access_token", "value": "={{ VOTRE_FB_PAGE_ACCESS_TOKEN_ICI }}" }
           ]
         }
       },
@@ -152,12 +152,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://graph.facebook.com/v18.0/{{ $env.IG_BUSINESS_ID }}/media",
+        "url": "https://graph.facebook.com/v18.0/{{ VOTRE_IG_BUSINESS_ACCOUNT_ID_ICI }}/media",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             { "name": "caption", "value": "={{ $json.body.content_text }}\n\n{{ ($json.body.hashtags || []).join(' ') }}" },
-            { "name": "access_token", "value": "={{ $env.FB_PAGE_TOKEN }}" }
+            { "name": "access_token", "value": "={{ VOTRE_FB_PAGE_ACCESS_TOKEN_ICI }}" }
           ]
         }
       },
@@ -170,17 +170,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/activity_feed",
+        "url": "={{ https://zbzicommpdsvkesqzyvb.supabase.co }}/rest/v1/activity_feed",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "apikey", "value": "={{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
+            { "name": "Authorization", "value": "Bearer {{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
-        "body": "{ \"user_id\": \"{{ $env.ALISON_USER_ID }}\", \"agent\": \"social\", \"icon\": \"fa-check-circle\", \"message\": \"<strong>Post publié</strong> — {{ $json.body.platform }} : {{ $json.body.content_text.substring(0, 60) }}...\" }"
+        "body": "{ \"user_id\": \"{{ fa832096-ef0a-4f6e-8136-7de3e5b00a4d }}\", \"agent\": \"social\", \"icon\": \"fa-check-circle\", \"message\": \"<strong>Post publié</strong> — {{ $json.body.platform }} : {{ $json.body.content_text.substring(0, 60) }}...\" }"
       },
       "name": "Log Activity Post",
       "type": "n8n-nodes-base.httpRequest",
@@ -214,12 +214,12 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.SUPABASE_URL }}/rest/v1/social_posts?status=eq.published&published_at=gte.{{ $today.minus(7, 'days').toISODate() }}&user_id=eq.{{ $env.ALISON_USER_ID }}",
+        "url": "={{ https://zbzicommpdsvkesqzyvb.supabase.co }}/rest/v1/social_posts?status=eq.published&published_at=gte.{{ $today.minus(7, 'days').toISODate() }}&user_id=eq.{{ fa832096-ef0a-4f6e-8136-7de3e5b00a4d }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+            { "name": "apikey", "value": "={{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" },
+            { "name": "Authorization", "value": "Bearer {{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTg0MSwiZXhwIjoyMDkwOTc1ODQxfQ.s1YD1Ypqw8-Lk16u3ZTwurwXjJena8SIXlIGiPwJPTk }}" }
           ]
         }
       },
