@@ -114,16 +114,33 @@ Toutes les tables ont RLS active avec policy `user_id = auth.uid()`
 - [x] Validation CSS formulaires (bordures rouge/vert sur champs invalides/valides)
 - [x] package.json + .gitignore
 
-## Workflows n8n (4 fichiers JSON importables)
-1. **Agent Comptable** : resume hebdo (lundi 9h), rappels declarations, log ventes
-2. **Agent Planning** : creation event Google Calendar, rappels SMS, relances auto, anniversaires
-3. **Agent Social** : generation contenu IA par plateforme, publication Meta, stats
-4. **Chatbot Deadpool** : webhook, contexte utilisateur, persona Claude
+## Workflows n8n (11 workflows DEPLOYES + ACTIFS sur jimmy010489.app.n8n.cloud)
+
+### Evenementiels (webhooks)
+1. **Email Confirmation RDV** (`4sXKFLUiEoR48Q71`) — declenche a chaque creation RDV, envoie email via Brevo
+2. **Sync Google Calendar** (`lMzRfBzdwnSldRwE`) — declenche a chaque creation RDV, cree l'event dans le GCal d'Alison via OAuth2
+3. **Nouvelle vente** (`agent-comptable` original) — webhook declenche a chaque vente
+4. **Chatbot Deadpool IA** — webhook streaming pour le chatbot in-app
+
+### Crons automatiques
+5. **SMS Rappel RDV J-1** (`jMwMr5SG9fadIbpk`) — cron 18h quotidien, SMS via Brevo
+6. **SMS Rappel RDV H-1** (`E8xhnDI2DmaMj6Kd`) — cron horaire, SMS via Brevo
+7. **Email Anniversaire clients** (`raroE26supQB8HEs`) — cron 9h quotidien
+8. **Relances J+1/J+3/J+7** (`2ACxIzKRd1ju95Ge`) — cron 10h quotidien, suite aux visites
+9. **Email Resume hebdomadaire** (`AXIuA0XgdjCNpUSU`) — cron Lundi 9h
+10. **Email Rappel URSSAF** (`2hLl7R1WNVjXUpJD`) — cron 20 Jan/Avr/Jul/Oct 9h
+11. **Agent Social Autopost** (`jnrOJK9ZpsQ2YIjN`) — cron Lun/Mer/Ven 10h, FIFO Supabase Storage
+
+### Integrations externes
+- **Brevo** (email + SMS unifies) — sender verifie : `ghostconciergerie@gmail.com`, SMS sender : `VisitSmile`
+- **Claude API** (Anthropic) — model `claude-haiku-4-5-20251001`, utilise pour generation messages + chatbot
+- **Google Calendar OAuth2** — credential `azMcSe556QPb512l` dans n8n (app OAuth creee dans Google Cloud : `n8n Deadpool IA`)
+- **Supabase Storage** — bucket `social-posts` pour les visuels de l'Agent Social
 
 ## Variables de configuration (config.js)
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` — credentials Supabase
-- `N8N_BASE_URL` — URL du serveur n8n
-- `WEBHOOKS` — paths des 5 webhooks (chatbot, new-sale, new-appointment, publish-post, generate-content)
+- `N8N_BASE_URL` — URL du serveur n8n (https://jimmy010489.app.n8n.cloud)
+- `WEBHOOKS` — paths : CHATBOT, NEW_SALE, NEW_APPOINTMENT, CONFIRM_APPOINTMENT, SYNC_GCAL, PUBLISH_POST, GENERATE_CONTENT
 - `URSSAF_RATE` — taux URSSAF (0.22 par defaut)
 - `DEFAULT_COMMISSION_RATE` — taux commission (3% par defaut)
 
@@ -132,28 +149,43 @@ Toutes les tables ont RLS active avec policy `user_id = auth.uid()`
 - **Fonts** : Space Grotesk (display), Outfit (body), JetBrains Mono (data)
 - **Effets** : Gold glow borders, glassmorphism, gradient subtils, animations CSS
 
-## Deploiement
-Voir `SETUP.md` pour le guide complet. Resume :
-1. Creer projet Supabase → executer schema.sql → creer user → executer seed.sql
-2. Configurer n8n (cloud ou self-hosted) → importer les 4 workflows → configurer credentials
-3. Deployer frontend (Vercel/Cloudflare Pages) → mettre a jour config.js
-4. Cout estime : ~25-35 EUR/mois
+## Deploiement (EN PROD)
+- **Frontend** : https://visit-and-smile.vercel.app (Vercel)
+- **Backend** : Supabase projet `zbzicommpdsvkesqzyvb` (schema + migration h1_reminder + google_event_id appliques)
+- **n8n** : https://jimmy010489.app.n8n.cloud (11 workflows actifs)
+- **Voir** `ACTIVATION.md` pour les 3 etapes de setup initial (deja completees)
 
-## Taches restantes pour livraison finale
-- [ ] Creer le projet Supabase reel d'Alison et y injecter schema + seed
-- [ ] Configurer n8n avec les vrais credentials (SendGrid, Twilio, Google Calendar, Meta, Claude API)
-- [ ] Deployer le frontend sur un domaine (ex: app.visitandsmile.fr)
-- [ ] Tester le flux complet end-to-end en production
+## Taches completees (livraison production)
+- [x] Creer projet Supabase + schema + seed
+- [x] Pivot SendGrid/Twilio → **Brevo** (emails + SMS unifies, sender verifie)
+- [x] Deploy 11 workflows n8n via API + activation
+- [x] Migration SQL (h1_reminder_sent, google_event_id)
+- [x] Google Calendar OAuth2 (app Google Cloud + credential n8n + activation workflow)
+- [x] Agent Social autopost (FIFO Supabase Storage + Claude caption)
+- [x] Panneau Automations dans Parametres (liste 11 workflows + boutons test)
+- [x] Toasts feedback sur creation RDV (email + gcal)
+- [x] Deploy prod Vercel
+- [x] ~~Onboarding tour guide~~
+- [x] ~~Recherche globale multi-categories~~
+- [x] ~~Command palette (Ctrl+K)~~
+- [x] ~~Export clients CSV~~
+- [x] ~~Mini calendrier planning~~
+- [x] ~~Suppression client avec modal de confirmation~~
+- [x] ~~Guide utilisateur integre (8 sections, imprimable)~~
+
+## Taches restantes (post-livraison)
+- [x] Test end-to-end reel — RDV cree, n8n Exec 214 OK (email Brevo + GCal + activity feed)
 - [ ] Former Alison a l'utilisation de l'app
-- [ ] Configurer le domaine personnalise + SSL
-- [x] ~~Onboarding tour guide~~ DONE
-- [x] ~~Recherche globale multi-categories~~ DONE
-- [x] ~~Command palette (Ctrl+K)~~ DONE
-- [x] ~~Export clients CSV~~ DONE
-- [x] ~~Mini calendrier planning~~ DONE
-- [x] ~~Suppression client avec modal de confirmation~~ DONE
-- [x] ~~Guide utilisateur integre (8 sections, imprimable)~~ DONE
+- [ ] Domaine personnalise app.visitandsmile.fr — configure sur Vercel (CNAME: app → c612396d62625409.vercel-dns-017.com.), domaine visitandsmile.fr non achete (~8€/an chez OVH/Gandi)
+- [ ] Meta/Instagram tokens pour autopost — agent-social.json pret (placeholders VOTRE_FB_PAGE_ACCESS_TOKEN_ICI etc.), attente tokens Alison via developers.facebook.com
+- [ ] Gmail OAuth scan inbox — fonctionnalite future, aucun workflow cree pour l'instant
 - [ ] Ajouter drag & drop pour reordonner les posts programmes (optionnel)
+- [x] Google OAuth "In production" — N/A : le credential Google Calendar utilise le OAuth gere par n8n (oauth.n8n.cloud), pas une app Google Cloud personnalisee. Warning "app non verifiee" = avertissement ponctuel n8n, deja accepte par Alison.
+
+## Notes techniques complementaires
+- `renderActivityMessage()` : fonction ajoutee dans app.js pour afficher balises HTML dans le feed d'activite
+- User ID Alison Supabase : fa832096-ef0a-4f6e-8136-7de3e5b00a4d
+- Credential n8n Google Calendar : azMcSe556QPb512l (OAuth gere n8n, Account connected)
 
 ## Commandes dev
 ```bash
