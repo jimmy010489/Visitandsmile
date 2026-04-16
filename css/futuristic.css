@@ -392,193 +392,165 @@ canvas {
   pointer-events: none !important;
 }
 
-/* Zone de dessin 3D */
+/* Zone de dessin */
 .chart-bars {
-  transform: perspective(700px) rotateX(8deg) !important;
-  transform-style: preserve-3d !important;
-  transform-origin: bottom center !important;
-  height: 160px !important;
+  height: 155px !important;
   padding-top: 0.5rem !important;
   position: relative !important;
   gap: 8px !important;
+  align-items: flex-end !important;
 }
 
 /* Ligne de sol lumineuse */
 .chart-bars::before {
   content: '' !important;
   position: absolute !important;
-  bottom: -2px !important;
+  bottom: 0px !important;
   left: 0 !important; right: 0 !important;
   height: 1px !important;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(212,169,49,0.15) 10%,
-    rgba(212,169,49,0.55) 50%,
-    rgba(212,169,49,0.15) 90%,
+    rgba(212,169,49,0.2) 10%,
+    rgba(212,169,49,0.6) 50%,
+    rgba(212,169,49,0.2) 90%,
     transparent 100%) !important;
-  box-shadow: 0 0 8px rgba(212,169,49,0.35) !important;
+  box-shadow: 0 0 10px rgba(212,169,49,0.4) !important;
   pointer-events: none !important;
+  z-index: 2 !important;
 }
 
-/* Reflet de sol */
+/* Reflet miroir sous le sol */
 .chart-bars::after {
   content: '' !important;
   position: absolute !important;
-  bottom: -14px !important;
-  left: 5% !important; right: 5% !important;
-  height: 12px !important;
-  background: linear-gradient(to bottom,
-    rgba(212,169,49,0.07),
-    transparent) !important;
+  bottom: -16px !important;
+  left: 4% !important; right: 4% !important;
+  height: 16px !important;
+  background: linear-gradient(to bottom, rgba(212,169,49,0.06), transparent) !important;
   pointer-events: none !important;
-  filter: blur(3px) !important;
+  filter: blur(4px) !important;
 }
 
 /* Colonnes */
 .chart-bar-col {
-  transform-style: preserve-3d !important;
   position: relative !important;
+  flex: 1 !important;
 }
 
-/* ---- BARRES OR (CA mensuel) ---- */
+/* ---- BARRES OR — effet 3D visuel par gradient ---- */
 .chart-bar.gold {
-  background: linear-gradient(180deg,
-    rgba(250,215,90,0.95) 0%,
-    rgba(212,169,49,1)    30%,
-    rgba(170,130,25,0.95) 65%,
-    rgba(110,85,12,0.9)   100%) !important;
+  background:
+    linear-gradient(to right,
+      rgba(255,235,140,0.18) 0%,
+      transparent           18%,
+      transparent           78%,
+      rgba(0,0,0,0.35)      100%),
+    linear-gradient(to top,
+      rgba(100,78,8,0.95)   0%,
+      rgba(160,122,18,1)    25%,
+      rgba(212,169,49,1)    55%,
+      rgba(245,205,75,0.95) 80%,
+      rgba(255,225,100,1)   100()) !important;
   box-shadow:
-    inset 3px 0 5px rgba(255,235,120,0.25),
-    inset -2px 0 4px rgba(0,0,0,0.45),
-    0 0 10px rgba(212,169,49,0.2),
-    4px 4px 12px rgba(0,0,0,0.5) !important;
-  border-radius: 2px 2px 0 0 !important;
+    inset 2px 0 6px rgba(255,240,150,0.2),
+    inset -3px 0 6px rgba(0,0,0,0.5),
+    0 0 12px rgba(212,169,49,0.25),
+    3px 0 0 rgba(80,60,5,0.8) !important;
+  border-radius: 3px 3px 0 0 !important;
   position: relative !important;
-  transition: all 0.85s cubic-bezier(0.16,1,0.3,1) !important;
+  transition: height 0.85s cubic-bezier(0.16,1,0.3,1) !important;
+  min-height: 4px !important;
 }
 
-/* Face supérieure dorée */
-.chart-bar.gold::before {
-  content: '' !important;
-  position: absolute !important;
-  top: -6px !important;
-  left: 0 !important; right: 0 !important;
-  height: 6px !important;
-  background: linear-gradient(135deg,
-    rgba(255,235,140,0.95),
-    rgba(212,169,49,0.85)) !important;
-  transform: rotateX(-90deg) !important;
-  transform-origin: bottom center !important;
-  border-radius: 2px 2px 0 0 !important;
-}
-
-/* Lueur pulsante au sommet */
+/* Capuchon lumineux sommet */
 .chart-bar.gold::after {
   content: '' !important;
   position: absolute !important;
-  top: -3px !important;
-  left: -1px !important; right: -1px !important;
-  height: 3px !important;
+  top: 0 !important;
+  left: 0 !important; right: 0 !important;
+  height: 4px !important;
   background: linear-gradient(90deg,
-    rgba(212,169,49,0.4),
-    rgba(250,215,90,1),
-    rgba(212,169,49,0.4)) !important;
+    rgba(212,169,49,0.5),
+    rgba(255,230,100,1),
+    rgba(212,169,49,0.5)) !important;
   box-shadow:
-    0 0 6px rgba(250,215,90,0.9),
-    0 0 14px rgba(212,169,49,0.7),
-    0 0 28px rgba(212,169,49,0.4) !important;
-  border-radius: 2px !important;
+    0 0 8px rgba(255,225,100,1),
+    0 0 18px rgba(212,169,49,0.8),
+    0 0 35px rgba(212,169,49,0.4) !important;
+  border-radius: 3px 3px 0 0 !important;
   animation: goldBarPulse 2.4s ease-in-out infinite !important;
 }
 
 @keyframes goldBarPulse {
-  0%, 100% {
-    opacity: 0.65;
-    box-shadow: 0 0 5px rgba(250,215,90,0.7), 0 0 10px rgba(212,169,49,0.5);
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(250,215,90,1), 0 0 22px rgba(212,169,49,0.85), 0 0 40px rgba(212,169,49,0.4);
-  }
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px rgba(255,225,100,0.8), 0 0 14px rgba(212,169,49,0.55); }
+  50%       { opacity: 1;   box-shadow: 0 0 12px rgba(255,225,100,1), 0 0 28px rgba(212,169,49,0.9), 0 0 50px rgba(212,169,49,0.45); }
 }
 
-/* ---- BARRES VERTES (Ventes) ---- */
+/* ---- BARRES VERTES — même logique ---- */
 .chart-bar.green {
-  background: linear-gradient(180deg,
-    rgba(120,255,170,0.9)  0%,
-    rgba(0,230,118,1)      30%,
-    rgba(0,175,80,0.95)    65%,
-    rgba(0,100,45,0.88)    100%) !important;
+  background:
+    linear-gradient(to right,
+      rgba(200,255,220,0.15) 0%,
+      transparent            18%,
+      transparent            78%,
+      rgba(0,0,0,0.35)       100%),
+    linear-gradient(to top,
+      rgba(0,80,40,0.95)    0%,
+      rgba(0,140,65,1)      25%,
+      rgba(0,210,100,1)     55%,
+      rgba(80,240,150,0.95) 80%,
+      rgba(130,255,180,1)   100%) !important;
   box-shadow:
-    inset 3px 0 5px rgba(180,255,200,0.2),
-    inset -2px 0 4px rgba(0,0,0,0.45),
-    0 0 10px rgba(0,230,118,0.18),
-    4px 4px 12px rgba(0,0,0,0.5) !important;
-  border-radius: 2px 2px 0 0 !important;
+    inset 2px 0 6px rgba(180,255,210,0.18),
+    inset -3px 0 6px rgba(0,0,0,0.5),
+    0 0 12px rgba(0,230,118,0.22),
+    3px 0 0 rgba(0,60,30,0.8) !important;
+  border-radius: 3px 3px 0 0 !important;
   position: relative !important;
-  transition: all 0.85s cubic-bezier(0.16,1,0.3,1) !important;
-}
-
-.chart-bar.green::before {
-  content: '' !important;
-  position: absolute !important;
-  top: -6px !important;
-  left: 0 !important; right: 0 !important;
-  height: 6px !important;
-  background: linear-gradient(135deg,
-    rgba(160,255,200,0.9),
-    rgba(0,200,100,0.8)) !important;
-  transform: rotateX(-90deg) !important;
-  transform-origin: bottom center !important;
-  border-radius: 2px 2px 0 0 !important;
+  transition: height 0.85s cubic-bezier(0.16,1,0.3,1) !important;
+  min-height: 4px !important;
 }
 
 .chart-bar.green::after {
   content: '' !important;
   position: absolute !important;
-  top: -3px !important;
-  left: -1px !important; right: -1px !important;
-  height: 3px !important;
+  top: 0 !important;
+  left: 0 !important; right: 0 !important;
+  height: 4px !important;
   background: linear-gradient(90deg,
-    rgba(0,200,100,0.4),
-    rgba(120,255,170,1),
-    rgba(0,200,100,0.4)) !important;
+    rgba(0,200,100,0.5),
+    rgba(130,255,180,1),
+    rgba(0,200,100,0.5)) !important;
   box-shadow:
-    0 0 6px rgba(120,255,170,0.9),
-    0 0 14px rgba(0,230,118,0.7),
-    0 0 28px rgba(0,230,118,0.4) !important;
-  border-radius: 2px !important;
+    0 0 8px rgba(130,255,180,1),
+    0 0 18px rgba(0,230,118,0.8),
+    0 0 35px rgba(0,230,118,0.4) !important;
+  border-radius: 3px 3px 0 0 !important;
   animation: greenBarPulse 2.4s ease-in-out infinite !important;
-  animation-delay: 0.5s !important;
+  animation-delay: 0.6s !important;
 }
 
 @keyframes greenBarPulse {
-  0%, 100% {
-    opacity: 0.65;
-    box-shadow: 0 0 5px rgba(120,255,170,0.7), 0 0 10px rgba(0,230,118,0.5);
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(120,255,170,1), 0 0 22px rgba(0,230,118,0.85), 0 0 40px rgba(0,230,118,0.4);
-  }
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px rgba(130,255,180,0.8), 0 0 14px rgba(0,230,118,0.55); }
+  50%       { opacity: 1;   box-shadow: 0 0 12px rgba(130,255,180,1), 0 0 28px rgba(0,230,118,0.9), 0 0 50px rgba(0,230,118,0.45); }
 }
 
-/* Hover : le bloc s'illumine */
+/* Hover — barre s'illumine */
 .chart-bar-col:hover .chart-bar.gold {
-  filter: brightness(1.2) !important;
+  filter: brightness(1.18) saturate(1.1) !important;
   box-shadow:
-    inset 3px 0 5px rgba(255,235,120,0.35),
-    inset -2px 0 4px rgba(0,0,0,0.3),
-    0 0 20px rgba(212,169,49,0.45),
-    4px 4px 16px rgba(0,0,0,0.5) !important;
+    inset 2px 0 6px rgba(255,240,150,0.3),
+    inset -3px 0 6px rgba(0,0,0,0.4),
+    0 0 24px rgba(212,169,49,0.55),
+    3px 0 0 rgba(80,60,5,0.8) !important;
 }
 .chart-bar-col:hover .chart-bar.green {
-  filter: brightness(1.2) !important;
+  filter: brightness(1.18) saturate(1.1) !important;
   box-shadow:
-    inset 3px 0 5px rgba(180,255,200,0.3),
-    inset -2px 0 4px rgba(0,0,0,0.3),
-    0 0 20px rgba(0,230,118,0.4),
-    4px 4px 16px rgba(0,0,0,0.5) !important;
+    inset 2px 0 6px rgba(180,255,210,0.28),
+    inset -3px 0 6px rgba(0,0,0,0.4),
+    0 0 24px rgba(0,230,118,0.5),
+    3px 0 0 rgba(0,60,30,0.8) !important;
 }
 
 /* Valeurs et labels */
