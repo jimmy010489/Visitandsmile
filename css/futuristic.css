@@ -621,19 +621,19 @@ h1, .h1 {
   z-index: 9000 !important;
   bottom: 24px !important;
   right: 24px !important;
-  background: linear-gradient(135deg, #1a1205, #2e1f08) !important;
-  border: 2px solid rgba(212,169,49,0.45) !important;
-  color: var(--gold-warm) !important;
+  background: linear-gradient(135deg, #b8860b, #d4a931) !important;
+  border: 2px solid rgba(212,169,49,0.9) !important;
+  color: #000 !important;
   box-shadow:
-    0 0 20px rgba(212,169,49,0.2),
+    0 0 24px rgba(212,169,49,0.45),
     0 4px 24px rgba(0,0,0,0.6) !important;
 }
 
 .chatbot-toggle:hover {
-  background: linear-gradient(135deg, #2e1f08, #4a3010) !important;
-  border-color: rgba(212,169,49,0.7) !important;
+  background: linear-gradient(135deg, #d4a931, #f0cc50) !important;
+  border-color: rgba(212,169,49,1) !important;
   box-shadow:
-    0 0 32px rgba(212,169,49,0.4),
+    0 0 40px rgba(212,169,49,0.65),
     0 8px 36px rgba(0,0,0,0.6) !important;
 }
 
