@@ -269,8 +269,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== NAVIGATION =====
     const navItems = document.querySelectorAll('.nav-item');
     const pages = document.querySelectorAll('.page');
+    let _navTransitionTimer = null; // Anti race-condition
 
     function navigateTo(pageId) {
+        // Annuler toute transition en cours avant d'en démarrer une nouvelle
+        if (_navTransitionTimer) {
+            clearTimeout(_navTransitionTimer);
+            _navTransitionTimer = null;
+            // Nettoyer l'état des pages en cas de transition interrompue
+            pages.forEach(page => page.classList.remove('page-exit', 'page-enter'));
+        }
+
         navItems.forEach(item => item.classList.remove('active'));
         const activeNav = document.querySelector(`[data-page="${pageId}"]`);
         if (activeNav) activeNav.classList.add('active');
@@ -279,20 +288,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentPage = document.querySelector('.page.active');
         const targetPage = document.getElementById(`page-${pageId}`);
 
-        if (currentPage && targetPage && currentPage !== targetPage) {
+        if (!targetPage) return; // Page introuvable — sortir proprement
+
+        if (currentPage && currentPage !== targetPage) {
             currentPage.classList.add('page-exit');
-            setTimeout(() => {
-                pages.forEach(page => {
-                    page.classList.remove('active', 'page-exit');
-                });
+            _navTransitionTimer = setTimeout(() => {
+                _navTransitionTimer = null;
+                pages.forEach(page => page.classList.remove('active', 'page-exit', 'page-enter'));
                 targetPage.classList.add('active', 'page-enter');
-                // Scroll to top
                 document.querySelector('.main-content')?.scrollTo(0, 0);
                 setTimeout(() => targetPage.classList.remove('page-enter'), 350);
             }, 150);
-        } else if (targetPage) {
-            pages.forEach(page => page.classList.remove('active'));
+        } else {
+            pages.forEach(page => page.classList.remove('active', 'page-exit', 'page-enter'));
             targetPage.classList.add('active');
+            document.querySelector('.main-content')?.scrollTo(0, 0);
         }
 
         document.getElementById('sidebar').classList.remove('open');

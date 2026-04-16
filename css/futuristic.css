@@ -477,29 +477,42 @@ body::before {
   color: #fff !important;
 }
 
-/* FAB (floating action button) */
-.fab-main, .fab-btn {
-  background: linear-gradient(135deg, #0040cc, #0088ff) !important;
-  border: 1px solid rgba(0,245,255,0.5) !important;
-  box-shadow:
-    0 0 30px rgba(0,136,255,0.4),
-    0 0 60px rgba(0,136,255,0.15) !important;
-  animation: fabGlow 2.5s ease-in-out infinite !important;
+/* FAB (floating action button) — Gold theme, always visible */
+.fab-container {
+  position: fixed !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 8900 !important;
 }
 
-@keyframes fabGlow {
-  0%, 100% { box-shadow: 0 0 30px rgba(0,136,255,0.4), 0 0 60px rgba(0,136,255,0.15); }
-  50%       { box-shadow: 0 0 40px rgba(0,245,255,0.5), 0 0 80px rgba(0,245,255,0.2); }
+.fab-btn {
+  background: linear-gradient(135deg, #d4a931, #c49a20) !important;
+  border: 2px solid rgba(212,169,49,0.5) !important;
+  color: #0a0a0f !important;
+  box-shadow:
+    0 0 20px rgba(212,169,49,0.3),
+    0 4px 20px rgba(0,0,0,0.5) !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-/* AI Chat FAB */
-.ai-fab, .chatbot-fab, [class*="chat-fab"], [class*="deadpool-fab"] {
-  background: linear-gradient(135deg, #4400aa, #8800ff) !important;
-  border: 1px solid rgba(191,0,255,0.5) !important;
-  box-shadow:
-    0 0 30px rgba(191,0,255,0.4),
-    0 0 60px rgba(191,0,255,0.15) !important;
-  animation: aiFabGlow 3s ease-in-out infinite !important;
+/* Chatbot toggle — Purple/violet theme, always visible */
+.chatbot-toggle {
+  position: fixed !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 9000 !important;
+  background: linear-gradient(135deg, #1a0535, #3d0a7a) !important;
+  border: 2px solid rgba(191,0,255,0.4) !important;
+  color: #e8d5ff !important;
+}
+
+@keyframes fabGoldGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(212,169,49,0.3), 0 4px 20px rgba(0,0,0,0.5); }
+  50%       { box-shadow: 0 0 30px rgba(212,169,49,0.5), 0 6px 28px rgba(0,0,0,0.5); }
 }
 
 @keyframes aiFabGlow {
@@ -760,9 +773,151 @@ canvas {
 }
 
 /* ============================================================
+   CHATBOT PANEL — PURPLE CYBER THEME
+   ============================================================ */
+.chatbot-panel {
+  background: rgba(6,4,18,0.97) !important;
+  border: 1px solid rgba(191,0,255,0.2) !important;
+  box-shadow:
+    0 0 0 1px rgba(191,0,255,0.06),
+    0 24px 80px rgba(0,0,0,0.7),
+    0 0 80px rgba(191,0,255,0.06) !important;
+  backdrop-filter: blur(24px) !important;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, rgba(191,0,255,0.1), rgba(60,0,120,0.05)) !important;
+  border-bottom: 1px solid rgba(191,0,255,0.15) !important;
+}
+
+/* Chat messages */
+.chat-msg.bot {
+  background: rgba(191,0,255,0.08) !important;
+  border: 1px solid rgba(191,0,255,0.15) !important;
+  border-radius: 12px 12px 12px 4px !important;
+  color: #e8d5ff !important;
+}
+
+.chat-msg.user {
+  background: linear-gradient(135deg, rgba(212,169,49,0.15), rgba(212,169,49,0.08)) !important;
+  border: 1px solid rgba(212,169,49,0.2) !important;
+  border-radius: 12px 12px 4px 12px !important;
+  color: #fff5cc !important;
+}
+
+/* Chat input */
+.chatbot-input {
+  background: rgba(4,2,12,0.9) !important;
+  border-top: 1px solid rgba(191,0,255,0.12) !important;
+}
+
+.chatbot-input input {
+  background: rgba(191,0,255,0.05) !important;
+  border: 1px solid rgba(191,0,255,0.15) !important;
+  color: #e8d5ff !important;
+}
+
+.chatbot-input input:focus {
+  border-color: rgba(191,0,255,0.4) !important;
+  box-shadow: 0 0 12px rgba(191,0,255,0.15) !important;
+  outline: none !important;
+}
+
+#chatSend {
+  background: linear-gradient(135deg, #3d0a7a, #5a12a0) !important;
+  border: 1px solid rgba(191,0,255,0.4) !important;
+  color: #e8d5ff !important;
+}
+
+#chatSend:hover {
+  background: linear-gradient(135deg, #5a12a0, #7a20c0) !important;
+  box-shadow: 0 0 16px rgba(191,0,255,0.4) !important;
+}
+
+/* ============================================================
+   TOPBAR — CYBER ENHANCEMENT
+   ============================================================ */
+.topbar {
+  background: rgba(3,3,6,0.92) !important;
+  border-bottom: 1px solid rgba(0,245,255,0.06) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(0,245,255,0.04) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+}
+
+.topbar-search {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(0,245,255,0.08) !important;
+  transition: all 0.2s ease !important;
+}
+
+.topbar-search:focus-within {
+  border-color: rgba(0,245,255,0.2) !important;
+  box-shadow: 0 0 16px rgba(0,245,255,0.06) !important;
+  background: rgba(0,245,255,0.03) !important;
+}
+
+.topbar-search input {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+.topbar-search input::placeholder {
+  color: rgba(255,255,255,0.25) !important;
+}
+
+/* ============================================================
+   MOTIVATION BANNER — STYLED
+   ============================================================ */
+.motivation-banner {
+  background: linear-gradient(90deg,
+    rgba(0,8,30,0.95),
+    rgba(0,20,60,0.9) 50%,
+    rgba(0,8,30,0.95)) !important;
+  border: 1px solid rgba(0,245,255,0.1) !important;
+  border-left: 3px solid var(--cyber-cyan) !important;
+  box-shadow: 0 0 20px rgba(0,245,255,0.05) !important;
+}
+
+.motivation-icon {
+  color: var(--cyber-cyan) !important;
+  filter: drop-shadow(0 0 6px rgba(0,245,255,0.5)) !important;
+}
+
+/* ============================================================
+   PAGE HEADER — CLEAN & FUTURISTIC
+   ============================================================ */
+.page-header {
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(0,245,255,0.05) !important;
+  margin-bottom: 2rem !important;
+}
+
+.page-header h2 {
+  background: linear-gradient(135deg, #fff 0%, rgba(0,245,255,0.9) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  filter: drop-shadow(0 0 12px rgba(0,245,255,0.15)) !important;
+}
+
+/* ============================================================
+   ACTIVITY FEED
+   ============================================================ */
+.activity-item {
+  border-left: 2px solid transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.activity-item:hover {
+  border-left-color: rgba(0,245,255,0.3) !important;
+  background: rgba(0,245,255,0.02) !important;
+}
+
+/* ============================================================
    RESPONSIVE ADJUSTMENTS
    ============================================================ */
 @media (max-width: 768px) {
   .logo-name { font-size: 0.9rem !important; }
   .kpi-value  { font-size: 1.4rem !important; }
+  .fab-container { bottom: 6rem !important; right: 1rem !important; }
+  .chatbot-toggle { bottom: 1rem !important; right: 1rem !important; }
 }
