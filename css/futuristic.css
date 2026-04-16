@@ -370,8 +370,8 @@ canvas {
 
 /* Container HUD */
 .chart-container {
-  perspective: 900px !important;
-  perspective-origin: 50% -10% !important;
+  perspective: 700px !important;
+  perspective-origin: 50% 0% !important;
   overflow: visible !important;
   background: linear-gradient(160deg, rgba(6,5,2,0.98) 0%, rgba(3,3,6,0.99) 100%) !important;
   border: 1px solid rgba(212,169,49,0.14) !important;
@@ -394,10 +394,10 @@ canvas {
 
 /* Zone de dessin 3D */
 .chart-bars {
-  transform: rotateX(20deg) rotateY(-2deg) !important;
+  transform: perspective(700px) rotateX(8deg) !important;
   transform-style: preserve-3d !important;
   transform-origin: bottom center !important;
-  height: 140px !important;
+  height: 160px !important;
   padding-top: 0.5rem !important;
   position: relative !important;
   gap: 8px !important;
