@@ -2134,9 +2134,173 @@ document.addEventListener('DOMContentLoaded', () => {
         return typing;
     }
 
+    // ===== AGENT ANALYSE PROSPECT (ENNEAGRAMME) =====
+    function addChatMsgHTML(html, type) {
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${type}`;
+        msg.innerHTML = html;
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function formatEnneagramResult(name, text) {
+        const lines = text.split('\n').filter(l => l.trim());
+        let html = `<div class="enn-card"><div class="enn-intro"><div class="enn-title">🧬 Analyse Enneagramme — ${name}</div></div>`;
+
+        let currentSection = null;
+        let sectionContent = '';
+
+        const sectionMap = {
+            'TYPE': { cls: '', icon: '🔢' },
+            'STRAT': { cls: '', icon: '🎯' },
+            'PHRASES': { cls: '', icon: '💬' },
+            'OBJECTIONS': { cls: 'enn-warning', icon: '🚧' }
+        };
+
+        function closeSection() {
+            if (currentSection) {
+                const { cls, icon } = sectionMap[currentSection];
+                html += `<div class="enn-section ${cls}"><div class="enn-header">${icon} ${currentSection}</div>${sectionContent}</div>`;
+                sectionContent = '';
+                currentSection = null;
+            }
+        }
+
+        for (const line of lines) {
+            const upper = line.toUpperCase().trim();
+            let matched = false;
+            for (const key of Object.keys(sectionMap)) {
+                if (upper.includes(key)) {
+                    closeSection();
+                    currentSection = key;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && currentSection) {
+                sectionContent += `<div class="enn-line">${line.trim()}</div>`;
+            }
+        }
+        closeSection();
+        html += '</div>';
+        return html;
+    }
+
+    let prospectAnalysis = {
+        active: false,
+        step: 0,
+        answers: {},
+        prospectName: '',
+        questions: [
+            { key: 'comportement', text: '👤 Comment se comportait-il/elle lors de la visite ? (ex: très analytique, émotionnel, pressé, indécis...)' },
+            { key: 'prix', text: '💰 Face au prix, quelle était sa réaction ? (ex: cherchait à négocier, justifiait son budget, semblait stressé...)' },
+            { key: 'decision', text: '🧠 Comment semble-t-il/elle prendre ses décisions ? (ex: seul·e, en famille, besoin de temps, impulsif...)' },
+            { key: 'valeurs', text: "⭐ Qu'est-ce qui semblait le plus important pour lui/elle ? (ex: sécurité, prestige, bonne affaire, confort...)" },
+            { key: 'objections', text: '🚧 Comment réagissait-il/elle face aux inconvénients ? (ex: bloquait sur les défauts, minimisait, cherchait des solutions...)' },
+            { key: 'communication', text: '💬 Son style de communication ? (ex: direct, réservé, posait beaucoup de questions, écoutait surtout...)' },
+            { key: 'details', text: "✨ Des détails marquants ? (ex: a mentionné son travail, son historique d'achat, une contrainte particulière...)" }
+        ]
+    };
+
+    function startProspectAnalysis() {
+        prospectAnalysis.active = true;
+        prospectAnalysis.step = 0;
+        prospectAnalysis.answers = {};
+        prospectAnalysis.prospectName = '';
+        addChatMsg('🧬 Mode Analyse Prospect activé !', 'bot');
+        setTimeout(() => {
+            addChatMsg('Pour commencer, quel est le prénom de ton prospect ?', 'bot');
+        }, 500);
+    }
+
+    async function handleProspectStep(text) {
+        const step = prospectAnalysis.step;
+        addChatMsg(text, 'user');
+        chatInput.value = '';
+
+        if (step === 0) {
+            prospectAnalysis.prospectName = text;
+            prospectAnalysis.step = 1;
+            setTimeout(() => {
+                addChatMsg(`Super ! Analysons ${text} ensemble 🎯\n\nJe vais te poser 7 questions rapides.\n\n${prospectAnalysis.questions[0].text}`, 'bot');
+            }, 400);
+        } else if (step >= 1 && step <= 7) {
+            const qIndex = step - 1;
+            const key = prospectAnalysis.questions[qIndex].key;
+            prospectAnalysis.answers[key] = text;
+
+            if (step < 7) {
+                prospectAnalysis.step++;
+                setTimeout(() => {
+                    addChatMsg(prospectAnalysis.questions[step].text, 'bot');
+                }, 400);
+            } else {
+                prospectAnalysis.step = 8;
+                setTimeout(() => {
+                    addChatMsg("⏳ Parfait ! Je génère l'analyse Enneagramme...", 'bot');
+                    runEnneagramAnalysis();
+                }, 400);
+            }
+        }
+    }
+
+    async function runEnneagramAnalysis() {
+        const name = prospectAnalysis.prospectName;
+        const a = prospectAnalysis.answers;
+
+        const prompt = `Tu es un expert en Enneagramme et en vente immobilière. Analyse ce prospect nommé ${name} et donne une analyse structurée avec exactement 4 sections :
+
+TYPE ENNEAGRAMME : Identifie le type (1-9) le plus probable avec une brève explication du pourquoi.
+
+STRATÉGIE DE VENTE : 3-4 conseils concrets adaptés à ce type pour conclure la vente.
+
+PHRASES CLÉS À UTILISER : 3-4 formulations qui résonneront avec ce profil.
+
+GESTION DES OBJECTIONS : Comment anticiper et répondre aux objections typiques de ce type.
+
+Voici les observations sur ${name} :
+- Comportement lors de la visite : ${a.comportement || 'non renseigné'}
+- Réaction face au prix : ${a.prix || 'non renseigné'}
+- Style de prise de décision : ${a.decision || 'non renseigné'}
+- Ce qui semble important : ${a.valeurs || 'non renseigné'}
+- Réaction face aux inconvénients : ${a.objections || 'non renseigné'}
+- Style de communication : ${a.communication || 'non renseigné'}
+- Détails supplémentaires : ${a.details || 'aucun'}
+
+Sois précis, pratique et orienté résultats. Réponds en français.`;
+
+        const typingEl = showTyping();
+        try {
+            let result;
+            if (isSupabaseConfigured) {
+                result = await Chatbot.sendMessage(prompt);
+            } else {
+                await new Promise(r => setTimeout(r, 1000));
+                result = `TYPE ENNEAGRAMME : Analyse non disponible (Supabase non configuré)\n\nSTRATÉGIE DE VENTE : Connecte le backend pour activer l'analyse IA\n\nPHRASES CLÉS À UTILISER : -\n\nGESTION DES OBJECTIONS : -`;
+            }
+            typingEl.remove();
+            addChatMsgHTML(formatEnneagramResult(name, result), 'bot');
+        } catch (e) {
+            typingEl.remove();
+            addChatMsg("❌ Erreur lors de l'analyse. Réessaie en tapant /analyser.", 'bot');
+        }
+
+        prospectAnalysis.active = false;
+        prospectAnalysis.step = 0;
+        prospectAnalysis.answers = {};
+        prospectAnalysis.prospectName = '';
+    }
+
     async function sendChat() {
         const text = chatInput.value.trim();
         if (!text) return;
+
+        // Agent analyse prospect — intercepte avant tout
+        if (prospectAnalysis.active) { handleProspectStep(text); return; }
+        const lowerText = text.toLowerCase().trim();
+        if (lowerText === '/analyser' || lowerText.includes('analyser prospect') || lowerText === 'analyser') {
+            addChatMsg(text, 'user'); chatInput.value = ''; startProspectAnalysis(); return;
+        }
 
         // Rate limit : max 10 messages par minute
         if (!RateLimiter.check('chatbot', 10, 60000)) {

@@ -4328,3 +4328,71 @@ textarea.form-input {
     @page { margin: 1.5cm; }
     .page-header::after { content: "Visit & Smile — Deadpool IA — Imprime le " attr(data-date); display: block; font-size: 0.7rem; color: #999; margin-top: 0.3rem; }
 }
+
+/* ===== AGENT ENNEAGRAMME — CHATBOT ===== */
+.enn-card {
+    background: linear-gradient(135deg, rgba(212,169,49,0.06), rgba(0,0,0,0.2));
+    border: 1px solid rgba(212,169,49,0.25);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.enn-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 12px;
+}
+.enn-title {
+    font-family: var(--font-display);
+    color: var(--gold);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.enn-section {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border-left: 2px solid rgba(212,169,49,0.3);
+}
+.enn-warning {
+    background: rgba(212,169,49,0.06) !important;
+    border-left-color: var(--gold) !important;
+}
+.enn-header {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 5px;
+}
+.enn-line {
+    opacity: 0.88;
+    margin-bottom: 3px;
+    color: rgba(255,255,255,0.85);
+}
+.chat-quick-actions {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.chat-quick-btn {
+    background: rgba(212,169,49,0.12);
+    border: 1px solid rgba(212,169,49,0.3);
+    color: var(--gold);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: var(--font-body);
+}
+.chat-quick-btn:hover {
+    background: rgba(212,169,49,0.22);
+}
