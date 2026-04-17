@@ -1,0 +1,151 @@
+{
+  "name": "Deadpool IA - SMS Rappel RDV J-1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Chaque jour 18h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-j1"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?select=*,clients(first_name,last_name,phone,email),profiles(full_name,business_name)&start_time=gte.{{ new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0] }}T00:00:00&start_time=lt.{{ new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0] }}T00:00:00&status=in.(scheduled,confirmed)&reminder_sent=eq.false",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch RDV Demain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "id": "fetch-rdv-demain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrer les RDV avec un client ayant un telephone et/ou un email\nconst rdvs = items[0].json || [];\nconst results = [];\n\nfor (const rdv of rdvs) {\n  if (!rdv.clients) continue;\n  const client = rdv.clients;\n  if (!client.phone && !client.email) continue;\n  \n  const start = new Date(rdv.start_time);\n  const dateStr = start.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });\n  const timeStr = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });\n  \n  // Normaliser telephone francais au format international\n  let phone = (client.phone || '').replace(/[\\s.-]/g, '');\n  if (phone.startsWith('0')) phone = '+33' + phone.substring(1);\n  else if (phone && !phone.startsWith('+')) phone = '+33' + phone;\n  \n  results.push({\n    json: {\n      rdv_id: rdv.id,\n      user_id: rdv.user_id,\n      client_id: rdv.client_id,\n      client_first_name: client.first_name,\n      client_name: `${client.first_name} ${client.last_name}`,\n      client_phone: phone,\n      client_email: client.email,\n      has_phone: !!phone,\n      has_email: !!client.email,\n      rdv_title: rdv.title,\n      rdv_date: dateStr,\n      rdv_time: timeStr,\n      rdv_location: rdv.location || 'A confirmer',\n      agent_name: (rdv.profiles && rdv.profiles.full_name) || 'Alison',\n      agent_business: (rdv.profiles && rdv.profiles.business_name) || 'Visit & Smile',\n      sms_text: `Bonjour ${client.first_name}, je vous rappelle notre RDV demain ${dateStr} a ${timeStr} - ${rdv.title}${rdv.location ? ' a ' + rdv.location : ''}. A demain ! Alison - Visit & Smile`\n    }\n  });\n}\n\nreturn results;"
+      },
+      "name": "Prepare Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "prepare-reminders"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-phone",
+              "leftValue": "={{ $json.has_phone }}",
+              "rightValue": "true",
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Has Phone?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "id": "if-has-phone"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/transactionalSMS/sms",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "accept", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"transactional\",\n  \"unicodeEnabled\": false,\n  \"sender\": \"VisitSmile\",\n  \"recipient\": \"{{ $json.client_phone }}\",\n  \"content\": \"{{ $json.sms_text }}\",\n  \"tag\": \"rdv-j1\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 200],
+      "id": "brevo-sms"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"{{ $json.agent_name }} - {{ $json.agent_business }}\", \"email\": \"noreply@visitandsmile.fr\" },\n  \"to\": [{ \"email\": \"{{ $json.client_email }}\", \"name\": \"{{ $json.client_name }}\" }],\n  \"subject\": \"Rappel : RDV demain - {{ $json.rdv_title }}\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px'><div style='background:#fff;border-radius:12px;padding:30px;border:1px solid #eee'><h2 style='color:#d4a931;border-bottom:2px solid #d4a931;padding-bottom:10px'>Rappel de rendez-vous</h2><p>Bonjour {{ $json.client_first_name }},</p><p>Je vous rappelle notre rendez-vous <strong>demain</strong> :</p><div style='background:#fafafa;padding:15px;border-left:3px solid #d4a931;margin:15px 0'><p style='margin:5px 0'><strong>{{ $json.rdv_title }}</strong></p><p style='margin:5px 0'>{{ $json.rdv_date }} a {{ $json.rdv_time }}</p><p style='margin:5px 0'>{{ $json.rdv_location }}</p></div><p>A demain !</p><p><strong>{{ $json.agent_name }}</strong><br><em>{{ $json.agent_business }}</em></p></div></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send Email Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 400],
+      "id": "brevo-email-fallback"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?id=eq.{{ $('Prepare Reminders').item.json.rdv_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"reminder_sent\": true\n}",
+        "options": {}
+      },
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300],
+      "id": "mark-sent"
+    }
+  ],
+  "connections": {
+    "Chaque jour 18h": { "main": [[{ "node": "Fetch RDV Demain", "type": "main", "index": 0 }]] },
+    "Fetch RDV Demain": { "main": [[{ "node": "Prepare Reminders", "type": "main", "index": 0 }]] },
+    "Prepare Reminders": { "main": [[{ "node": "Has Phone?", "type": "main", "index": 0 }]] },
+    "Has Phone?": { "main": [[{ "node": "Brevo Send SMS", "type": "main", "index": 0 }], [{ "node": "Brevo Send Email Fallback", "type": "main", "index": 0 }]] },
+    "Brevo Send SMS": { "main": [[{ "node": "Mark Reminder Sent", "type": "main", "index": 0 }]] },
+    "Brevo Send Email Fallback": { "main": [[{ "node": "Mark Reminder Sent", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

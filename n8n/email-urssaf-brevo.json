@@ -1,0 +1,132 @@
+{
+  "name": "Deadpool IA - Email Rappel URSSAF",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 20 1,4,7,10 *" }
+          ]
+        }
+      },
+      "name": "20 Jan/Avr/Jul/Oct 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-urssaf"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calcule le trimestre precedent\nconst now = new Date();\nconst currentMonth = now.getMonth(); // 0-11\n// Trimestre precedent = mois courant - 3\nconst startMonth = Math.floor(currentMonth / 3) * 3 - 3;\nconst year = startMonth < 0 ? now.getFullYear() - 1 : now.getFullYear();\nconst realStart = (startMonth + 12) % 12;\nconst start = new Date(year, realStart, 1);\nconst end = new Date(year, realStart + 3, 1);\nconst quarterName = `Q${Math.floor(realStart / 3) + 1} ${year}`;\nreturn [{ json: {\n  from_iso: start.toISOString(),\n  to_iso: end.toISOString(),\n  quarter: quarterName,\n  deadline: `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`\n} }];"
+      },
+      "name": "Compute Quarter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "id": "compute-quarter"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/sales?select=*&created_at=gte.{{ $json.from_iso }}&created_at=lt.{{ $json.to_iso }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Sales Quarter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 300],
+      "id": "fetch-sales-q"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/profiles?select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Profiles Q",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 300],
+      "id": "fetch-profiles-q"
+    },
+    {
+      "parameters": {
+        "jsCode": "const profiles = items[0].json || [];\nconst sales = $('Fetch Sales Quarter').first().json || [];\nconst quarter = $('Compute Quarter').first().json.quarter;\nconst results = [];\nfor (const profile of profiles) {\n  if (!profile.email) continue;\n  const userSales = sales.filter(s => s.user_id === profile.id);\n  const totalCommission = userSales.reduce((sum, s) => sum + (Number(s.commission_amount) || 0), 0);\n  const rate = Number(profile.urssaf_rate) || 0.22;\n  const totalUrssaf = totalCommission * rate;\n  results.push({\n    json: {\n      user_id: profile.id,\n      email: profile.email,\n      full_name: profile.full_name || 'Alison',\n      business_name: profile.business_name || 'Visit & Smile',\n      quarter,\n      nb_ventes: userSales.length,\n      total_commission: totalCommission.toFixed(2),\n      total_urssaf: totalUrssaf.toFixed(2),\n      rate_pct: (rate * 100).toFixed(1)\n    }\n  });\n}\nreturn results;"
+      },
+      "name": "Calculate URSSAF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 300],
+      "id": "calc-urssaf"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"Deadpool IA - {{ $json.business_name }}\", \"email\": \"noreply@visitandsmile.fr\" },\n  \"to\": [{ \"email\": \"{{ $json.email }}\", \"name\": \"{{ $json.full_name }}\" }],\n  \"subject\": \"Rappel URSSAF {{ $json.quarter }} - {{ $json.total_urssaf }} EUR a declarer\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px'><div style='background:#fff;border-radius:16px;padding:35px;border:2px solid #ff4757'><div style='background:#ff4757;color:#fff;padding:10px 15px;border-radius:8px;display:inline-block;font-size:12px;text-transform:uppercase;font-weight:700;margin-bottom:20px'>Rappel URSSAF</div><h1 style='color:#1a1a1a;margin:0 0 10px;font-size:22px'>Declaration {{ $json.quarter }}</h1><p style='color:#666;margin:0 0 25px'>Bonjour {{ $json.full_name }}, il est temps de declarer votre chiffre d'affaires trimestriel.</p><div style='background:#fafafa;padding:25px;border-radius:12px;margin:20px 0'><div style='margin-bottom:18px'><div style='color:#999;font-size:12px;text-transform:uppercase'>Commissions encaissees</div><div style='color:#1a1a1a;font-size:24px;font-weight:700'>{{ $json.total_commission }} EUR</div><div style='color:#999;font-size:12px'>{{ $json.nb_ventes }} vente(s)</div></div><div style='height:1px;background:#eee;margin:15px 0'></div><div><div style='color:#ff4757;font-size:12px;text-transform:uppercase;font-weight:700'>A declarer (taux {{ $json.rate_pct }}%)</div><div style='color:#ff4757;font-size:32px;font-weight:700;font-family:monospace'>{{ $json.total_urssaf }} EUR</div></div></div><div style='background:#fff8e1;border-left:4px solid #d4a931;padding:15px;border-radius:8px;margin-top:20px'><p style='margin:0;color:#333;font-size:13px'><strong>Rendez-vous sur autoentrepreneur.urssaf.fr</strong> avant la date limite pour effectuer votre declaration.</p></div><p style='color:#999;font-size:11px;text-align:center;margin-top:25px'>Deadpool IA - {{ $json.business_name }}</p></div></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send URSSAF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 300],
+      "id": "brevo-urssaf"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Calculate URSSAF').item.json.user_id }}\",\n  \"channel\": \"email\",\n  \"type\": \"urssaf_reminder\",\n  \"subject\": \"Rappel URSSAF {{ $('Calculate URSSAF').item.json.quarter }}\",\n  \"content\": \"{{ $('Calculate URSSAF').item.json.total_urssaf }} EUR a declarer\",\n  \"sent_at\": \"{{ new Date().toISOString() }}\",\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "name": "Log URSSAF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 300],
+      "id": "log-urssaf"
+    }
+  ],
+  "connections": {
+    "20 Jan/Avr/Jul/Oct 9h": { "main": [[{ "node": "Compute Quarter", "type": "main", "index": 0 }]] },
+    "Compute Quarter": { "main": [[{ "node": "Fetch Sales Quarter", "type": "main", "index": 0 }]] },
+    "Fetch Sales Quarter": { "main": [[{ "node": "Fetch Profiles Q", "type": "main", "index": 0 }]] },
+    "Fetch Profiles Q": { "main": [[{ "node": "Calculate URSSAF", "type": "main", "index": 0 }]] },
+    "Calculate URSSAF": { "main": [[{ "node": "Brevo Send URSSAF", "type": "main", "index": 0 }]] },
+    "Brevo Send URSSAF": { "main": [[{ "node": "Log URSSAF", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

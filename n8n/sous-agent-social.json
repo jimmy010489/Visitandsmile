@@ -1,0 +1,139 @@
+{
+  "name": "Sous-Agent Social",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sous-agent-social",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Sous-Agent Social",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "id": "webhook-social"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "generer_post", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "generer" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "programmer_publication", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "programmer" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "analyser_stats", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "stats" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "name": "Router Action Social",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [400, 400],
+      "id": "router-social"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "VOTRE_CLE_API_ANTHROPIC" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 500,\n  \"system\": \"Tu es l'expert social media de Visit & Smile, agence immobiliere a Orleans. Tu rediges des posts percutants, chaleureux et professionnels en francais. Ton style : accrocheur, authentique, avec emojis pertinents. Adapte le ton a la plateforme.\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Genere un post {{ $json.body.tone || 'professionnel' }} pour {{ (($json.body.platforms || ['instagram']).join(' et ')) }}.\\n\\nContexte : {{ $json.body.context }}\\n\\nFormat attendu :\\n- Hook accrocheur (1ere ligne)\\n- Corps du message (2-3 phrases)\\n- Call-to-action\\n- Hashtags pertinents (5-8 max)\"\n  }]\n}"
+      },
+      "name": "Claude Génère Contenu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 200],
+      "id": "claude-social"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Préparer les données du post généré\nconst webhook = $('Webhook Sous-Agent Social').first().json.body;\nconst claudeResp = $input.first().json;\nconst caption = claudeResp.content?.[0]?.text || '';\nconst platforms = webhook.platforms || ['instagram'];\n\n// Créer un post par plateforme\nreturn platforms.map(platform => ({\n  json: {\n    user_id: webhook.user_id,\n    platform,\n    content_text: caption,\n    status: 'draft',\n    scheduled_at: new Date(Date.now() + 3600000).toISOString(),\n    usage: claudeResp.usage\n  }\n}));"
+      },
+      "name": "Préparer Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [820, 200],
+      "id": "prepare-posts"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/social_posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Sauvegarder Post (draft)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1020, 200],
+      "id": "save-post"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook Sous-Agent Social').first().json.body.user_id }}\",\n  \"agent\": \"social\",\n  \"icon\": \"fa-instagram\",\n  \"message\": \"<strong>Agent Social</strong> — Post généré · En attente de votre approbation\"\n}"
+      },
+      "name": "Log Activité Social",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 300],
+      "id": "log-social"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"agent\": \"agent_social\", \"action\": \"{{ $('Webhook Sous-Agent Social').first().json.body.action }}\", \"status\": \"completed\", \"posts_created\": true, \"timestamp\": \"{{ new Date().toISOString() }}\" }"
+      },
+      "name": "Respond Social",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1380, 300],
+      "id": "respond-social"
+    }
+  ],
+  "connections": {
+    "Webhook Sous-Agent Social": { "main": [[{ "node": "Router Action Social", "type": "main", "index": 0 }]] },
+    "Router Action Social": {
+      "generer": [[{ "node": "Claude Génère Contenu", "type": "main", "index": 0 }]],
+      "programmer": [[{ "node": "Log Activité Social", "type": "main", "index": 0 }]],
+      "stats": [[{ "node": "Log Activité Social", "type": "main", "index": 0 }]]
+    },
+    "Claude Génère Contenu": { "main": [[{ "node": "Préparer Posts", "type": "main", "index": 0 }]] },
+    "Préparer Posts": { "main": [[{ "node": "Sauvegarder Post (draft)", "type": "main", "index": 0 }]] },
+    "Sauvegarder Post (draft)": { "main": [[{ "node": "Log Activité Social", "type": "main", "index": 0 }]] },
+    "Log Activité Social": { "main": [[{ "node": "Respond Social", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Sous-Agent" }]
+}

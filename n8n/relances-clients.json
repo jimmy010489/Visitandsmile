@@ -1,0 +1,167 @@
+{
+  "name": "Deadpool IA - Relances Clients J+1/J+3/J+7",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 10 * * *" }
+          ]
+        }
+      },
+      "name": "Chaque jour 10h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-relances"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calcule les 3 fenetres: J-1, J-3, J-7 (RDV passes)\nconst now = new Date();\nfunction dayWindow(daysAgo) {\n  const d = new Date(now);\n  d.setDate(d.getDate() - daysAgo);\n  d.setHours(0, 0, 0, 0);\n  const end = new Date(d);\n  end.setDate(end.getDate() + 1);\n  return { from: d.toISOString(), to: end.toISOString() };\n}\nreturn [\n  { json: { step: 'j1', type_log: 'relance_j1', ...dayWindow(1) } },\n  { json: { step: 'j3', type_log: 'relance_j3', ...dayWindow(3) } },\n  { json: { step: 'j7', type_log: 'relance_j7', ...dayWindow(7) } }\n];"
+      },
+      "name": "Compute Windows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "id": "compute-windows-relance"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?select=*,clients(first_name,last_name,email,phone),profiles(full_name,business_name)&start_time=gte.{{ $json.from }}&start_time=lt.{{ $json.to }}&type=eq.visit&status=in.(completed,confirmed,scheduled)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Past Visits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 300],
+      "id": "fetch-past-visits"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pour chaque RDV, on prepare un item avec le step (j1/j3/j7) present dans $input.first\nconst step = $('Compute Windows').item.json.step;\nconst typeLog = $('Compute Windows').item.json.type_log;\nconst rdvs = items.map(i => i.json);\nconst results = [];\nfor (const rdv of rdvs) {\n  if (!rdv.clients || !rdv.clients.email) continue;\n  const client = rdv.clients;\n  const profile = rdv.profiles || {};\n  let subject, prompt;\n  if (step === 'j1') {\n    subject = 'Suite a votre visite';\n    prompt = `Redige un email court et chaleureux (3-4 phrases) pour remercier ${client.first_name} apres sa visite du bien \"${rdv.title}\" hier. Demande ses impressions sans pression. Signe ${profile.full_name || 'Alison'}. Pas de formule commerciale lourde.`;\n  } else if (step === 'j3') {\n    subject = 'Des nouvelles de votre projet ?';\n    prompt = `Redige un email court (3-4 phrases) pour ${client.first_name} suite a sa visite du bien \"${rdv.title}\" il y a 3 jours. Demande s'il a pu reflechir, propose de repondre a ses questions. Ton amical et disponible. Signe ${profile.full_name || 'Alison'}.`;\n  } else {\n    subject = 'Toujours interesse ?';\n    prompt = `Redige un email tres court (3 phrases) pour ${client.first_name} une semaine apres la visite du bien \"${rdv.title}\". Propose de revoir d'autres biens s'il n'est plus interesse par celui-ci. Ton bienveillant, pas insistant. Signe ${profile.full_name || 'Alison'}.`;\n  }\n  results.push({\n    json: {\n      step,\n      type_log: typeLog,\n      rdv_id: rdv.id,\n      user_id: rdv.user_id,\n      client_id: rdv.client_id,\n      client_first_name: client.first_name,\n      client_name: `${client.first_name} ${client.last_name}`,\n      client_email: client.email,\n      rdv_title: rdv.title,\n      agent_name: profile.full_name || 'Alison Mendes',\n      agent_business: profile.business_name || 'Visit & Smile',\n      subject,\n      prompt\n    }\n  });\n}\nreturn results;"
+      },
+      "name": "Prepare Relances",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300],
+      "id": "prepare-relances"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log?select=id&client_id=eq.{{ $json.client_id }}&type=eq.{{ $json.type_log }}&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Check Already Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1060, 300],
+      "id": "check-sent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fusionne le resultat du check avec les donnees de preparation\nconst sentCheck = items[0].json || [];\nconst prep = $('Prepare Relances').item.json;\nif (Array.isArray(sentCheck) && sentCheck.length > 0) {\n  return [];\n}\nreturn [{ json: prep }];"
+      },
+      "name": "Skip If Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1260, 300],
+      "id": "skip-if-sent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "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" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 400,\n  \"system\": \"Tu rediges des emails de relance client courts, chaleureux et professionnels en francais pour une agent immobilier. Jamais insistant ni commercial. Pas de formules lourdes.\",\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"{{ $json.prompt }}\" }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Claude Redige Relance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1460, 300],
+      "id": "claude-relance"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"{{ $('Skip If Sent').item.json.agent_name }}\", \"email\": \"noreply@visitandsmile.fr\" },\n  \"to\": [{ \"email\": \"{{ $('Skip If Sent').item.json.client_email }}\", \"name\": \"{{ $('Skip If Sent').item.json.client_name }}\" }],\n  \"subject\": \"{{ $('Skip If Sent').item.json.subject }}\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px'><div style='background:#fff;border-radius:12px;padding:30px;border:1px solid #eee'><div style='border-left:3px solid #d4a931;padding-left:12px;margin-bottom:20px'><h2 style='color:#1a1a1a;margin:0;font-size:20px'>{{ $('Skip If Sent').item.json.subject }}</h2></div><p style='color:#333;font-size:15px;line-height:1.6;white-space:pre-line'>{{ $json.content[0].text }}</p><p style='color:#d4a931;font-weight:600;margin-top:25px'>{{ $('Skip If Sent').item.json.agent_business }} - Orleans</p></div></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send Relance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 300],
+      "id": "brevo-relance"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Skip If Sent').item.json.user_id }}\",\n  \"client_id\": \"{{ $('Skip If Sent').item.json.client_id }}\",\n  \"channel\": \"email\",\n  \"type\": \"{{ $('Skip If Sent').item.json.type_log }}\",\n  \"subject\": \"{{ $('Skip If Sent').item.json.subject }}\",\n  \"content\": \"{{ $json.content ? $json.content[0].text : 'Relance envoyee' }}\",\n  \"sent_at\": \"{{ new Date().toISOString() }}\",\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "name": "Log Relance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1900, 300],
+      "id": "log-relance"
+    }
+  ],
+  "connections": {
+    "Chaque jour 10h": { "main": [[{ "node": "Compute Windows", "type": "main", "index": 0 }]] },
+    "Compute Windows": { "main": [[{ "node": "Fetch Past Visits", "type": "main", "index": 0 }]] },
+    "Fetch Past Visits": { "main": [[{ "node": "Prepare Relances", "type": "main", "index": 0 }]] },
+    "Prepare Relances": { "main": [[{ "node": "Check Already Sent", "type": "main", "index": 0 }]] },
+    "Check Already Sent": { "main": [[{ "node": "Skip If Sent", "type": "main", "index": 0 }]] },
+    "Skip If Sent": { "main": [[{ "node": "Claude Redige Relance", "type": "main", "index": 0 }]] },
+    "Claude Redige Relance": { "main": [[{ "node": "Brevo Send Relance", "type": "main", "index": 0 }]] },
+    "Brevo Send Relance": { "main": [[{ "node": "Log Relance", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

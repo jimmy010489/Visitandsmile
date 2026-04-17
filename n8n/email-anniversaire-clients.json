@@ -1,0 +1,125 @@
+{
+  "name": "Deadpool IA - Email Anniversaire Clients",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 * * *" }
+          ]
+        }
+      },
+      "name": "Chaque jour 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-birthday"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/clients?select=*,profiles(full_name,business_name)&birthday=not.is.null&email=not.is.null",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Clients",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "id": "fetch-clients-birthday"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\nconst mm = String(today.getMonth() + 1).padStart(2, '0');\nconst dd = String(today.getDate()).padStart(2, '0');\nconst todayKey = `${mm}-${dd}`;\n\nconst results = [];\nfor (const client of (items[0].json || [])) {\n  if (!client.birthday || !client.email) continue;\n  const bday = client.birthday.substring(5); // MM-DD\n  if (bday !== todayKey) continue;\n  const profile = client.profiles || {};\n  results.push({\n    json: {\n      client_id: client.id,\n      user_id: client.user_id,\n      client_first_name: client.first_name,\n      client_name: `${client.first_name} ${client.last_name}`,\n      client_email: client.email,\n      agent_name: profile.full_name || 'Alison Mendes',\n      agent_business: profile.business_name || 'Visit & Smile'\n    }\n  });\n}\nreturn results;"
+      },
+      "name": "Filter Today Birthdays",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "filter-birthdays"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "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" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 300,\n  \"system\": \"Tu rediges des messages d'anniversaire chaleureux et personnalises pour les clients d'une agent immobilier. Le ton doit etre chaleureux mais professionnel, court (3-4 phrases), en francais, sans etre commercial. Signe simplement le prenom de l'agent.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Redige un message d'anniversaire pour {{ $json.client_first_name }}, client de {{ $json.agent_business }}. Signe de la part d'{{ $json.agent_name }}.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Claude Genere Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 300],
+      "id": "claude-birthday"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"{{ $('Filter Today Birthdays').item.json.agent_name }}\", \"email\": \"noreply@visitandsmile.fr\" },\n  \"to\": [{ \"email\": \"{{ $('Filter Today Birthdays').item.json.client_email }}\", \"name\": \"{{ $('Filter Today Birthdays').item.json.client_name }}\" }],\n  \"subject\": \"Joyeux anniversaire {{ $('Filter Today Birthdays').item.json.client_first_name }} !\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px'><div style='background:linear-gradient(135deg,#fffaf0,#fff);border-radius:16px;padding:35px;border:1px solid #d4a931;text-align:center'><div style='font-size:48px;margin-bottom:10px'>🎂</div><h1 style='color:#d4a931;margin:0;font-size:26px'>Joyeux anniversaire !</h1><div style='height:2px;width:60px;background:#d4a931;margin:20px auto'></div><p style='color:#333;font-size:15px;line-height:1.6;text-align:left;white-space:pre-line'>{{ $json.content[0].text }}</p><p style='color:#d4a931;font-weight:600;margin-top:25px'>{{ $('Filter Today Birthdays').item.json.agent_business }}</p></div></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send Birthday",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 300],
+      "id": "brevo-birthday"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Filter Today Birthdays').item.json.user_id }}\",\n  \"client_id\": \"{{ $('Filter Today Birthdays').item.json.client_id }}\",\n  \"channel\": \"email\",\n  \"type\": \"birthday\",\n  \"subject\": \"Joyeux anniversaire\",\n  \"content\": \"Message d'anniversaire envoye\",\n  \"sent_at\": \"{{ new Date().toISOString() }}\",\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "name": "Log Birthday",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300],
+      "id": "log-birthday"
+    }
+  ],
+  "connections": {
+    "Chaque jour 9h": { "main": [[{ "node": "Fetch Clients", "type": "main", "index": 0 }]] },
+    "Fetch Clients": { "main": [[{ "node": "Filter Today Birthdays", "type": "main", "index": 0 }]] },
+    "Filter Today Birthdays": { "main": [[{ "node": "Claude Genere Message", "type": "main", "index": 0 }]] },
+    "Claude Genere Message": { "main": [[{ "node": "Brevo Send Birthday", "type": "main", "index": 0 }]] },
+    "Brevo Send Birthday": { "main": [[{ "node": "Log Birthday", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

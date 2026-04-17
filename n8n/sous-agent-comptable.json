@@ -1,0 +1,154 @@
+{
+  "name": "Sous-Agent Comptable",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sous-agent-comptable",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Sous-Agent Comptable",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "id": "webhook-comptable"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "enregistrer_vente", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "vente" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "generer_rapport", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "rapport" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "rappel_urssaf", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "urssaf" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "calculer_commission", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "commission" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "name": "Router Action Comptable",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [400, 400],
+      "id": "router-comptable"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/sales",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook Sous-Agent Comptable').first().json.body.user_id }}\",\n  \"client_name\": \"{{ $json.body.data.client_name }}\",\n  \"property_name\": \"{{ $json.body.data.property_name }}\",\n  \"sale_price\": {{ $json.body.data.sale_price }},\n  \"commission_rate\": {{ $json.body.data.commission_rate || 0.03 }},\n  \"sale_date\": \"{{ $json.body.data.sale_date || new Date().toISOString().split('T')[0] }}\",\n  \"status\": \"pending\"\n}"
+      },
+      "name": "Enregistrer Vente Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 200],
+      "id": "save-vente"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/rpc/get_dashboard_stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"p_user_id\": \"{{ $('Webhook Sous-Agent Comptable').first().json.body.user_id }}\" }"
+      },
+      "name": "Récupérer Stats Rapport",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 400],
+      "id": "get-stats"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "VOTRE_CLE_API_ANTHROPIC" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 600,\n  \"system\": \"Tu es l'agent comptable de Visit & Smile. Tu analyses les donnees financieres d'Alison Mendes et generes des rapports clairs et actionnables en francais.\",\n  \"messages\": [{ \"role\": \"user\", \"content\": \"Genere un rapport financier concis a partir de ces stats : {{ JSON.stringify($json) }}. Inclus : CA du mois, comparaison avec le mois precedent, URSSAF dues, et 2 recommandations.\" }]\n}"
+      },
+      "name": "Claude Génère Rapport",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 400],
+      "id": "claude-rapport"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook Sous-Agent Comptable').first().json.body.user_id }}\",\n  \"agent\": \"compta\",\n  \"icon\": \"fa-euro-sign\",\n  \"message\": \"<strong>Agent Comptable</strong> — Action executee : {{ $('Webhook Sous-Agent Comptable').first().json.body.action }}\"\n}"
+      },
+      "name": "Log Activité Comptable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1020, 400],
+      "id": "log-comptable"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"agent\": \"agent_comptable\", \"action\": \"{{ $('Webhook Sous-Agent Comptable').first().json.body.action }}\", \"status\": \"completed\", \"timestamp\": \"{{ new Date().toISOString() }}\" }"
+      },
+      "name": "Respond Comptable",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 400],
+      "id": "respond-comptable"
+    }
+  ],
+  "connections": {
+    "Webhook Sous-Agent Comptable": { "main": [[{ "node": "Router Action Comptable", "type": "main", "index": 0 }]] },
+    "Router Action Comptable": {
+      "vente": [[{ "node": "Enregistrer Vente Supabase", "type": "main", "index": 0 }]],
+      "rapport": [[{ "node": "Récupérer Stats Rapport", "type": "main", "index": 0 }]],
+      "urssaf": [[{ "node": "Log Activité Comptable", "type": "main", "index": 0 }]],
+      "commission": [[{ "node": "Log Activité Comptable", "type": "main", "index": 0 }]]
+    },
+    "Enregistrer Vente Supabase": { "main": [[{ "node": "Log Activité Comptable", "type": "main", "index": 0 }]] },
+    "Récupérer Stats Rapport": { "main": [[{ "node": "Claude Génère Rapport", "type": "main", "index": 0 }]] },
+    "Claude Génère Rapport": { "main": [[{ "node": "Log Activité Comptable", "type": "main", "index": 0 }]] },
+    "Log Activité Comptable": { "main": [[{ "node": "Respond Comptable", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Sous-Agent" }]
+}

@@ -3228,13 +3228,13 @@ textarea.form-input {
     flex-shrink: 0;
 }
 
-.guide-section-icon.compta { background: rgba(108,92,231,0.12); color: #a78bfa; }
-.guide-section-icon.social { background: rgba(0,230,118,0.1); color: var(--green); }
-.guide-section-icon.planning { background: rgba(0,149,246,0.1); color: #38bdf8; }
-.guide-section-icon.clients { background: rgba(255,165,0,0.1); color: #ffa500; }
+.guide-section-icon.compta { background: rgba(212,169,49,0.12); color: var(--gold); }
+.guide-section-icon.social { background: rgba(212,169,49,0.08); color: var(--gold); }
+.guide-section-icon.planning { background: rgba(212,169,49,0.10); color: var(--gold); }
+.guide-section-icon.clients { background: rgba(212,169,49,0.10); color: var(--gold); }
 .guide-section-icon.chatbot { background: rgba(212,169,49,0.12); color: var(--gold); }
-.guide-section-icon.shortcuts { background: rgba(255,255,255,0.05); color: var(--white); }
-.guide-section-icon.support { background: rgba(255,71,87,0.1); color: var(--red); }
+.guide-section-icon.shortcuts { background: rgba(212,169,49,0.06); color: rgba(255,255,255,0.8); }
+.guide-section-icon.support { background: rgba(212,169,49,0.08); color: var(--gold); }
 
 .guide-section-body {
     flex: 1;

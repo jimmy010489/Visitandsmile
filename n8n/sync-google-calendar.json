@@ -1,0 +1,135 @@
+{
+  "name": "Deadpool IA - Sync Google Calendar",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync-gcal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Sync GCal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "id": "wh-sync-gcal",
+      "webhookId": "sync-gcal"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?id=eq.{{ $json.body.appointment_id }}&select=*,clients(first_name,last_name,email,phone),profiles(full_name,business_name)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch RDV Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300],
+      "id": "fetch-rdv-gcal"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rdv = (items[0].json && items[0].json[0]) || null;\nif (!rdv) return [{ json: { skip: true, reason: 'RDV introuvable' } }];\nconst client = rdv.clients || {};\nconst start = new Date(rdv.start_time);\nconst end = rdv.end_time ? new Date(rdv.end_time) : new Date(start.getTime() + 60 * 60000);\nconst attendees = client.email ? [client.email] : [];\nreturn [{\n  json: {\n    skip: false,\n    rdv_id: rdv.id,\n    user_id: rdv.user_id,\n    summary: rdv.title,\n    description: `${rdv.description || ''}\\n\\nClient: ${client.first_name || ''} ${client.last_name || ''}${client.phone ? '\\nTel: ' + client.phone : ''}${client.email ? '\\nEmail: ' + client.email : ''}`,\n    location: rdv.location || '',\n    start_iso: start.toISOString(),\n    end_iso: end.toISOString(),\n    attendees: attendees\n  }\n}];"
+      },
+      "name": "Prepare Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "id": "prepare-event"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": "false",
+              "operator": { "type": "boolean", "operation": "false" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Valid RDV?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [860, 300],
+      "id": "if-valid"
+    },
+    {
+      "parameters": {
+        "calendar": { "__rl": true, "value": "primary", "mode": "list" },
+        "start": "={{ $json.start_iso }}",
+        "end": "={{ $json.end_iso }}",
+        "additionalFields": {
+          "summary": "={{ $json.summary }}",
+          "description": "={{ $json.description }}",
+          "location": "={{ $json.location }}",
+          "attendees": "={{ $json.attendees }}",
+          "sendUpdates": "all"
+        }
+      },
+      "name": "Create GCal Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [1100, 200],
+      "id": "gcal-create",
+      "notes": "REQUIRES: Google Calendar OAuth2 credential to be attached manually in n8n UI"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?id=eq.{{ $('Prepare Event').item.json.rdv_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"google_event_id\": \"{{ $json.id }}\",\n  \"source\": \"google_calendar\"\n}",
+        "options": {}
+      },
+      "name": "Store GCal ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200],
+      "id": "store-gcal-id"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"synced\": !$('Valid RDV?').first().json.skip, \"event_id\": $('Create GCal Event').first()?.json?.id || null } }}",
+        "options": {}
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1540, 300],
+      "id": "respond-gcal"
+    }
+  ],
+  "connections": {
+    "Webhook Sync GCal": { "main": [[{ "node": "Fetch RDV Details", "type": "main", "index": 0 }]] },
+    "Fetch RDV Details": { "main": [[{ "node": "Prepare Event", "type": "main", "index": 0 }]] },
+    "Prepare Event": { "main": [[{ "node": "Valid RDV?", "type": "main", "index": 0 }]] },
+    "Valid RDV?": { "main": [[{ "node": "Create GCal Event", "type": "main", "index": 0 }], [{ "node": "Respond", "type": "main", "index": 0 }]] },
+    "Create GCal Event": { "main": [[{ "node": "Store GCal ID", "type": "main", "index": 0 }]] },
+    "Store GCal ID": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

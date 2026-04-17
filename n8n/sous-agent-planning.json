@@ -1,0 +1,170 @@
+{
+  "name": "Sous-Agent Planning",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sous-agent-planning",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Sous-Agent Planning",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "id": "webhook-planning"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "creer_rdv", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "rdv" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "envoyer_relance", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "relance" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "rappel_anniversaire", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "anniversaire" },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.body.action }}", "rightValue": "sync_agenda", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "sync" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "name": "Router Action Planning",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [400, 400],
+      "id": "router-planning"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $json.body.user_id }}\",\n  \"client_id\": \"{{ $json.body.data.client_id || null }}\",\n  \"title\": \"{{ $json.body.data.title }}\",\n  \"type\": \"{{ $json.body.data.type || 'visit' }}\",\n  \"start_time\": \"{{ $json.body.data.start_time }}\",\n  \"end_time\": \"{{ $json.body.data.end_time || null }}\",\n  \"status\": \"scheduled\",\n  \"source\": \"agent_ia\"\n}"
+      },
+      "name": "Créer RDV Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 160],
+      "id": "create-rdv"
+    },
+    {
+      "parameters": {
+        "calendar": { "value": "primary" },
+        "start": "={{ $('Webhook Sous-Agent Planning').first().json.body.data.start_time }}",
+        "end": "={{ $('Webhook Sous-Agent Planning').first().json.body.data.end_time || new Date(new Date($('Webhook Sous-Agent Planning').first().json.body.data.start_time).getTime() + 3600000).toISOString() }}",
+        "additionalFields": {
+          "summary": "={{ $('Webhook Sous-Agent Planning').first().json.body.data.title }}",
+          "description": "RDV créé par Deadpool IA"
+        }
+      },
+      "name": "Sync Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [820, 160],
+      "id": "sync-gcal-rdv"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "VOTRE_CLE_API_ANTHROPIC" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 300,\n  \"system\": \"Tu es l'assistant d'Alison Mendes, agente immobiliere a Orleans. Tu rediges des messages de relance chaleureux et professionnels en francais, adaptes au contexte de la visite.\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Redige un email de relance pour {{ $json.body.data.client_name }} suite a une visite du bien {{ $json.body.data.property_name }}. Delai depuis la visite : {{ $json.body.data.days_since_visit }} jour(s). Ton : chaleureux, professionnel, sans pression. Max 5 lignes.\"\n  }]\n}"
+      },
+      "name": "Claude Rédige Relance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 400],
+      "id": "claude-relance"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "VOTRE_BREVO_API_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"Alison — Visit & Smile\", \"email\": \"ghostconciergerie@gmail.com\" },\n  \"to\": [{ \"email\": \"{{ $('Webhook Sous-Agent Planning').first().json.body.data.client_email }}\", \"name\": \"{{ $('Webhook Sous-Agent Planning').first().json.body.data.client_name }}\" }],\n  \"subject\": \"Suite à votre visite 🏠\",\n  \"textContent\": \"{{ $json.content[0].text }}\"\n}"
+      },
+      "name": "Envoyer Email Relance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 400],
+      "id": "send-relance"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook Sous-Agent Planning').first().json.body.user_id }}\",\n  \"agent\": \"planning\",\n  \"icon\": \"fa-calendar-check\",\n  \"message\": \"<strong>Agent Planning</strong> — Action : {{ $('Webhook Sous-Agent Planning').first().json.body.action }}\"\n}"
+      },
+      "name": "Log Activité Planning",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1020, 400],
+      "id": "log-planning"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"agent\": \"agent_planning\", \"action\": \"{{ $('Webhook Sous-Agent Planning').first().json.body.action }}\", \"status\": \"completed\", \"timestamp\": \"{{ new Date().toISOString() }}\" }"
+      },
+      "name": "Respond Planning",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 400],
+      "id": "respond-planning"
+    }
+  ],
+  "connections": {
+    "Webhook Sous-Agent Planning": { "main": [[{ "node": "Router Action Planning", "type": "main", "index": 0 }]] },
+    "Router Action Planning": {
+      "rdv": [[{ "node": "Créer RDV Supabase", "type": "main", "index": 0 }]],
+      "relance": [[{ "node": "Claude Rédige Relance", "type": "main", "index": 0 }]],
+      "anniversaire": [[{ "node": "Log Activité Planning", "type": "main", "index": 0 }]],
+      "sync": [[{ "node": "Log Activité Planning", "type": "main", "index": 0 }]]
+    },
+    "Créer RDV Supabase": { "main": [[{ "node": "Sync Google Calendar", "type": "main", "index": 0 }]] },
+    "Sync Google Calendar": { "main": [[{ "node": "Log Activité Planning", "type": "main", "index": 0 }]] },
+    "Claude Rédige Relance": { "main": [[{ "node": "Envoyer Email Relance", "type": "main", "index": 0 }]] },
+    "Envoyer Email Relance": { "main": [[{ "node": "Log Activité Planning", "type": "main", "index": 0 }]] },
+    "Log Activité Planning": { "main": [[{ "node": "Respond Planning", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Sous-Agent" }]
+}

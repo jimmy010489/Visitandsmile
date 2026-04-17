@@ -1,0 +1,138 @@
+{
+  "name": "Deadpool IA - Email Confirmation RDV",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirm-appointment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Confirmation RDV",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "id": "wh-confirm-rdv",
+      "webhookId": "confirm-appointment"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/appointments?id=eq.{{ $json.body.appointment_id }}&select=*,clients(first_name,last_name,email,phone),profiles(full_name,business_name,phone)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch RDV + Client",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "id": "fetch-rdv-client"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rdv = items[0].json[0];\nif (!rdv || !rdv.clients || !rdv.clients.email) {\n  return [{ json: { skip: true, reason: 'Pas de client ou pas d email' } }];\n}\n\nconst client = rdv.clients;\nconst profile = rdv.profiles || {};\nconst startDate = new Date(rdv.start_time);\nconst dateStr = startDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });\nconst timeStr = startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });\n\nreturn [{\n  json: {\n    skip: false,\n    client_email: client.email,\n    client_name: `${client.first_name} ${client.last_name}`,\n    client_first_name: client.first_name,\n    user_id: rdv.user_id,\n    client_id: rdv.client_id,\n    rdv_title: rdv.title,\n    rdv_description: rdv.description || '',\n    rdv_date: dateStr,\n    rdv_time: timeStr,\n    rdv_location: rdv.location || 'A confirmer',\n    rdv_type: rdv.type,\n    agent_name: profile.full_name || 'Alison Mendes',\n    agent_business: profile.business_name || 'Visit & Smile',\n    agent_phone: profile.phone || ''\n  }\n}];"
+      },
+      "name": "Prepare Email Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "prepare-email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": "false",
+              "operator": { "type": "boolean", "operation": "false" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Skip If No Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "id": "if-skip"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "accept", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"{{ $json.agent_name }} - {{ $json.agent_business }}\",\n    \"email\": \"noreply@visitandsmile.fr\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.client_email }}\",\n      \"name\": \"{{ $json.client_name }}\"\n    }\n  ],\n  \"subject\": \"Confirmation de rendez-vous - {{ $json.rdv_title }}\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5'><div style='background:#fff;border-radius:12px;padding:30px;box-shadow:0 2px 10px rgba(0,0,0,0.1)'><div style='border-left:4px solid #d4a931;padding-left:15px;margin-bottom:25px'><h1 style='color:#1a1a1a;margin:0;font-size:22px'>Rendez-vous confirme</h1><p style='color:#666;margin:5px 0 0'>{{ $json.agent_business }}</p></div><p style='color:#333;font-size:15px'>Bonjour {{ $json.client_first_name }},</p><p style='color:#333;font-size:15px'>Je vous confirme notre rendez-vous :</p><div style='background:#fafafa;border-left:3px solid #d4a931;padding:15px;margin:20px 0;border-radius:6px'><p style='margin:5px 0;color:#1a1a1a'><strong>Objet :</strong> {{ $json.rdv_title }}</p><p style='margin:5px 0;color:#1a1a1a'><strong>Date :</strong> {{ $json.rdv_date }}</p><p style='margin:5px 0;color:#1a1a1a'><strong>Heure :</strong> {{ $json.rdv_time }}</p><p style='margin:5px 0;color:#1a1a1a'><strong>Lieu :</strong> {{ $json.rdv_location }}</p></div><p style='color:#333;font-size:15px'>En cas d'empechement, merci de me prevenir au plus tot{{ $json.agent_phone ? ' au ' + $json.agent_phone : '' }}.</p><p style='color:#333;font-size:15px'>A tres bientot !</p><p style='color:#333;font-size:15px;margin-top:25px'><strong>{{ $json.agent_name }}</strong><br><span style='color:#666;font-size:13px'>{{ $json.agent_business }} - Orleans</span></p></div><p style='text-align:center;color:#999;font-size:11px;margin-top:20px'>Email envoye automatiquement par Deadpool IA</p></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 200],
+      "id": "brevo-send"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Prepare Email Data').first().json.user_id }}\",\n  \"client_id\": \"{{ $('Prepare Email Data').first().json.client_id }}\",\n  \"channel\": \"email\",\n  \"type\": \"appointment_reminder\",\n  \"subject\": \"Confirmation de rendez-vous\",\n  \"content\": \"{{ $('Prepare Email Data').first().json.rdv_title }} - {{ $('Prepare Email Data').first().json.rdv_date }}\",\n  \"sent_at\": \"{{ new Date().toISOString() }}\",\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "name": "Log Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 200],
+      "id": "log-msg"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"sent\": !$('Skip If No Email').first().json.skip } }}",
+        "options": {}
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1640, 300],
+      "id": "respond-confirm"
+    }
+  ],
+  "connections": {
+    "Webhook Confirmation RDV": { "main": [[{ "node": "Fetch RDV + Client", "type": "main", "index": 0 }]] },
+    "Fetch RDV + Client": { "main": [[{ "node": "Prepare Email Data", "type": "main", "index": 0 }]] },
+    "Prepare Email Data": { "main": [[{ "node": "Skip If No Email", "type": "main", "index": 0 }]] },
+    "Skip If No Email": { "main": [[{ "node": "Brevo Send Email", "type": "main", "index": 0 }], [{ "node": "Respond", "type": "main", "index": 0 }]] },
+    "Brevo Send Email": { "main": [[{ "node": "Log Message", "type": "main", "index": 0 }]] },
+    "Log Message": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

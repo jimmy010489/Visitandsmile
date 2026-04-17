@@ -1,0 +1,182 @@
+{
+  "name": "Chef Agent — Orchestrateur IA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "orchestrateur",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Orchestrateur",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "id": "webhook-orch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraire le contexte de l'événement entrant\nconst body = $input.first().json.body;\nreturn [{\n  json: {\n    event_type: body.event_type || 'user_request',\n    payload: body.payload || {},\n    user_id: body.user_id,\n    message: body.message || '',\n    source: body.source || 'app',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Extraire Contexte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [380, 400],
+      "id": "extract-context"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "VOTRE_CLE_API_ANTHROPIC" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"system\": \"Tu es le Chef Agent de Visit & Smile, l'assistant immobilier d'Alison Mendes a Orleans. Tu orchestres 3 agents specialises. Ton role : analyser chaque evenement et decider quel(s) agent(s) activer avec quel contexte.\\n\\nAgents disponibles :\\n- agent_comptable : ventes, commissions, URSSAF, rapports financiers\\n- agent_social : generation et publication de posts reseaux sociaux\\n- agent_planning : RDV, relances clients, anniversaires\\n\\nRègles :\\n1. Toujours utiliser au moins un outil\\n2. Tu peux activer plusieurs agents si l'evenement les concerne\\n3. Pour une nouvelle_vente : activer agent_comptable OBLIGATOIRE + agent_social si bien vendu (post celebration)\\n4. Pour nouveau_rdv : activer agent_planning OBLIGATOIRE\\n5. Pour demande_rapport : activer agent_comptable\\n6. Sois efficace et precis dans les instructions aux agents.\",\n  \"tools\": [\n    {\n      \"name\": \"agent_comptable\",\n      \"description\": \"Agent specialise en comptabilite immobiliere. Gere les ventes, calcul commissions/URSSAF, declarations fiscales et rapports financiers.\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"action\": { \"type\": \"string\", \"enum\": [\"enregistrer_vente\", \"generer_rapport\", \"rappel_urssaf\", \"calculer_commission\"], \"description\": \"Action a effectuer\" },\n          \"data\": { \"type\": \"object\", \"description\": \"Donnees necessaires a l'action\" },\n          \"priority\": { \"type\": \"string\", \"enum\": [\"haute\", \"normale\", \"basse\"] }\n        },\n        \"required\": [\"action\"]\n      }\n    },\n    {\n      \"name\": \"agent_social\",\n      \"description\": \"Agent specialise en reseaux sociaux. Genere du contenu adapte et programme les publications sur Instagram, Facebook, LinkedIn.\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"action\": { \"type\": \"string\", \"enum\": [\"generer_post\", \"programmer_publication\", \"analyser_stats\"], \"description\": \"Action a effectuer\" },\n          \"context\": { \"type\": \"string\", \"description\": \"Contexte pour la generation du contenu\" },\n          \"platforms\": { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"description\": \"Plateformes cibles\" },\n          \"tone\": { \"type\": \"string\", \"enum\": [\"celebration\", \"professionnel\", \"informatif\", \"inspirant\"] }\n        },\n        \"required\": [\"action\", \"context\"]\n      }\n    },\n    {\n      \"name\": \"agent_planning\",\n      \"description\": \"Agent specialise en planning et relation client. Gere les RDV, envoie les relances et rappels.\",\n      \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"action\": { \"type\": \"string\", \"enum\": [\"creer_rdv\", \"envoyer_relance\", \"rappel_anniversaire\", \"sync_agenda\"], \"description\": \"Action a effectuer\" },\n          \"client_id\": { \"type\": \"string\", \"description\": \"ID du client concerne\" },\n          \"data\": { \"type\": \"object\", \"description\": \"Donnees de l'action\" }\n        },\n        \"required\": [\"action\"]\n      }\n    }\n  ],\n  \"tool_choice\": { \"type\": \"auto\" },\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Evenement recu : {{ $json.event_type }}\\nPayload : {{ JSON.stringify($json.payload) }}\\nMessage : {{ $json.message }}\\n\\nDetermine quels agents activer et avec quelles instructions.\"\n    }\n  ]\n}"
+      },
+      "name": "Chef Agent Claude (tool_use)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 400],
+      "id": "chef-agent-claude"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parser la réponse du Chef Agent\n// Claude retourne des tool_use blocks qu'on extrait\nconst response = $input.first().json;\nconst content = response.content || [];\n\nconst toolCalls = content\n  .filter(block => block.type === 'tool_use')\n  .map(block => ({\n    agent: block.name,\n    action: block.input?.action,\n    data: block.input || {},\n    tool_use_id: block.id\n  }));\n\nconst textBlock = content.find(b => b.type === 'text');\nconst reasoning = textBlock?.text || '';\n\n// Log du raisonnement du chef agent\nconsole.log('[Chef Agent] Raisonnement:', reasoning);\nconsole.log('[Chef Agent] Agents activés:', toolCalls.map(t => t.agent).join(', '));\n\nreturn toolCalls.map(call => ({ json: { ...call, reasoning, timestamp: new Date().toISOString() } }));"
+      },
+      "name": "Parser Décisions Chef Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 400],
+      "id": "parse-decisions"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "options": { "caseSensitive": false }, "conditions": [{ "leftValue": "={{ $json.agent }}", "rightValue": "agent_comptable", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "comptable" },
+            { "conditions": { "options": { "caseSensitive": false }, "conditions": [{ "leftValue": "={{ $json.agent }}", "rightValue": "agent_social", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "social" },
+            { "conditions": { "options": { "caseSensitive": false }, "conditions": [{ "leftValue": "={{ $json.agent }}", "rightValue": "agent_planning", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true, "outputKey": "planning" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "name": "Router vers Agents",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [960, 400],
+      "id": "router-agents"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jimmy010489.app.n8n.cloud/webhook/sous-agent-comptable",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "name": "→ Sous-Agent Comptable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 200],
+      "id": "call-comptable"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jimmy010489.app.n8n.cloud/webhook/sous-agent-social",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "name": "→ Sous-Agent Social",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 400],
+      "id": "call-social"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jimmy010489.app.n8n.cloud/webhook/sous-agent-planning",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "name": "→ Sous-Agent Planning",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 600],
+      "id": "call-planning"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Agréger les résultats de tous les sous-agents\nconst results = $input.all().map(item => item.json);\nconst agents_activated = [...new Set(results.map(r => r.agent).filter(Boolean))];\nreturn [{\n  json: {\n    status: 'completed',\n    agents_activated,\n    results,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Agréger Résultats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 400],
+      "id": "aggregate-results"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Extraire Contexte').first().json.user_id }}\",\n  \"agent\": \"orchestrateur\",\n  \"icon\": \"fa-brain\",\n  \"message\": \"<strong>Chef Agent</strong> — {{ $json.agents_activated.length }} agent(s) activé(s) : {{ $json.agents_activated.join(', ') }}\"\n}"
+      },
+      "name": "Log Activité Orchestration",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 400],
+      "id": "log-activity"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Agréger Résultats').first().json) }}"
+      },
+      "name": "Respond Orchestrateur",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1700, 400],
+      "id": "respond-orch"
+    }
+  ],
+  "connections": {
+    "Webhook Orchestrateur": { "main": [[{ "node": "Extraire Contexte", "type": "main", "index": 0 }]] },
+    "Extraire Contexte": { "main": [[{ "node": "Chef Agent Claude (tool_use)", "type": "main", "index": 0 }]] },
+    "Chef Agent Claude (tool_use)": { "main": [[{ "node": "Parser Décisions Chef Agent", "type": "main", "index": 0 }]] },
+    "Parser Décisions Chef Agent": { "main": [[{ "node": "Router vers Agents", "type": "main", "index": 0 }]] },
+    "Router vers Agents": {
+      "comptable": [[{ "node": "→ Sous-Agent Comptable", "type": "main", "index": 0 }]],
+      "social": [[{ "node": "→ Sous-Agent Social", "type": "main", "index": 0 }]],
+      "planning": [[{ "node": "→ Sous-Agent Planning", "type": "main", "index": 0 }]]
+    },
+    "→ Sous-Agent Comptable": { "main": [[{ "node": "Agréger Résultats", "type": "main", "index": 0 }]] },
+    "→ Sous-Agent Social": { "main": [[{ "node": "Agréger Résultats", "type": "main", "index": 0 }]] },
+    "→ Sous-Agent Planning": { "main": [[{ "node": "Agréger Résultats", "type": "main", "index": 0 }]] },
+    "Agréger Résultats": { "main": [[{ "node": "Log Activité Orchestration", "type": "main", "index": 0 }]] },
+    "Log Activité Orchestration": { "main": [[{ "node": "Respond Orchestrateur", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "Visit & Smile" }, { "name": "Orchestrateur" }]
+}

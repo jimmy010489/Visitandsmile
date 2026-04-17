@@ -1,0 +1,132 @@
+{
+  "name": "Deadpool IA - Email Resume Hebdo",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 * * 1" }
+          ]
+        }
+      },
+      "name": "Lundi 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-hebdo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 86400000);\nreturn [{ json: { from_iso: weekAgo.toISOString(), to_iso: now.toISOString() } }];"
+      },
+      "name": "Compute Week",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "id": "compute-week"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/sales?select=*,profiles(full_name,business_name,email)&created_at=gte.{{ $json.from_iso }}&created_at=lt.{{ $json.to_iso }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Sales Week",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 300],
+      "id": "fetch-sales"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/profiles?select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Profiles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 300],
+      "id": "fetch-profiles"
+    },
+    {
+      "parameters": {
+        "jsCode": "const profiles = items[0].json || [];\nconst sales = $('Fetch Sales Week').first().json || [];\nconst results = [];\nfor (const profile of profiles) {\n  if (!profile.email) continue;\n  const userSales = sales.filter(s => s.user_id === profile.id);\n  const totalCA = userSales.reduce((sum, s) => sum + (Number(s.price) || 0), 0);\n  const totalCommission = userSales.reduce((sum, s) => sum + (Number(s.commission_amount) || 0), 0);\n  const totalUrssaf = userSales.reduce((sum, s) => sum + (Number(s.urssaf_amount) || 0), 0);\n  const totalNet = userSales.reduce((sum, s) => sum + (Number(s.net_profit) || 0), 0);\n  results.push({\n    json: {\n      user_id: profile.id,\n      email: profile.email,\n      full_name: profile.full_name || 'Alison',\n      business_name: profile.business_name || 'Visit & Smile',\n      nb_ventes: userSales.length,\n      total_ca: totalCA.toFixed(2),\n      total_commission: totalCommission.toFixed(2),\n      total_urssaf: totalUrssaf.toFixed(2),\n      total_net: totalNet.toFixed(2),\n      ventes_detail: userSales.map(s => `${s.property_address || s.title || 'Bien'} - ${Number(s.price).toLocaleString('fr-FR')} EUR`).join('<br>') || 'Aucune vente cette semaine'\n    }\n  });\n}\nreturn results;"
+      },
+      "name": "Aggregate Per User",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 300],
+      "id": "aggregate-hebdo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api-key", "value": "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" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": { \"name\": \"Deadpool IA - {{ $json.business_name }}\", \"email\": \"noreply@visitandsmile.fr\" },\n  \"to\": [{ \"email\": \"{{ $json.email }}\", \"name\": \"{{ $json.full_name }}\" }],\n  \"subject\": \"Resume de la semaine - {{ $json.nb_ventes }} vente(s) - {{ $json.total_ca }} EUR\",\n  \"htmlContent\": \"<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#030306;color:#fff'><div style='background:linear-gradient(135deg,#131318,#030306);border:1px solid #d4a931;border-radius:16px;padding:35px'><div style='border-left:4px solid #d4a931;padding-left:15px;margin-bottom:25px'><h1 style='color:#d4a931;margin:0;font-size:24px'>Resume de la semaine</h1><p style='color:#999;margin:5px 0 0;font-size:13px'>Bonjour {{ $json.full_name }}</p></div><div style='display:block;margin:25px 0'><div style='background:#1a1a20;padding:18px;border-radius:10px;border-left:3px solid #d4a931;margin-bottom:10px'><div style='color:#999;font-size:12px;text-transform:uppercase'>Chiffre d'affaires</div><div style='color:#d4a931;font-size:26px;font-weight:700;font-family:monospace'>{{ $json.total_ca }} EUR</div></div><div style='background:#1a1a20;padding:18px;border-radius:10px;border-left:3px solid #00e676;margin-bottom:10px'><div style='color:#999;font-size:12px;text-transform:uppercase'>Commissions</div><div style='color:#00e676;font-size:22px;font-weight:700;font-family:monospace'>{{ $json.total_commission }} EUR</div></div><div style='background:#1a1a20;padding:18px;border-radius:10px;border-left:3px solid #ff4757;margin-bottom:10px'><div style='color:#999;font-size:12px;text-transform:uppercase'>URSSAF a provisionner</div><div style='color:#ff4757;font-size:22px;font-weight:700;font-family:monospace'>{{ $json.total_urssaf }} EUR</div></div><div style='background:#1a1a20;padding:18px;border-radius:10px;border-left:3px solid #fff'><div style='color:#999;font-size:12px;text-transform:uppercase'>Net reel</div><div style='color:#fff;font-size:22px;font-weight:700;font-family:monospace'>{{ $json.total_net }} EUR</div></div></div><div style='background:#1a1a20;padding:18px;border-radius:10px;margin-top:15px'><div style='color:#d4a931;font-size:13px;text-transform:uppercase;margin-bottom:10px'>Ventes de la semaine ({{ $json.nb_ventes }})</div><div style='color:#ccc;font-size:14px;line-height:1.8'>{{ $json.ventes_detail }}</div></div><p style='color:#666;font-size:11px;text-align:center;margin-top:25px'>Envoye automatiquement par Deadpool IA</p></div></body></html>\"\n}",
+        "options": {}
+      },
+      "name": "Brevo Send Hebdo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 300],
+      "id": "brevo-hebdo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/messages_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Aggregate Per User').item.json.user_id }}\",\n  \"channel\": \"email\",\n  \"type\": \"weekly_summary\",\n  \"subject\": \"Resume de la semaine\",\n  \"content\": \"{{ $('Aggregate Per User').item.json.nb_ventes }} ventes - {{ $('Aggregate Per User').item.json.total_ca }} EUR\",\n  \"sent_at\": \"{{ new Date().toISOString() }}\",\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "name": "Log Hebdo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 300],
+      "id": "log-hebdo"
+    }
+  ],
+  "connections": {
+    "Lundi 9h": { "main": [[{ "node": "Compute Week", "type": "main", "index": 0 }]] },
+    "Compute Week": { "main": [[{ "node": "Fetch Sales Week", "type": "main", "index": 0 }]] },
+    "Fetch Sales Week": { "main": [[{ "node": "Fetch Profiles", "type": "main", "index": 0 }]] },
+    "Fetch Profiles": { "main": [[{ "node": "Aggregate Per User", "type": "main", "index": 0 }]] },
+    "Aggregate Per User": { "main": [[{ "node": "Brevo Send Hebdo", "type": "main", "index": 0 }]] },
+    "Brevo Send Hebdo": { "main": [[{ "node": "Log Hebdo", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

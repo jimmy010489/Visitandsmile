@@ -1,0 +1,166 @@
+{
+  "name": "Deadpool IA - Agent Social Auto-Post",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 1,3,5"
+            }
+          ]
+        }
+      },
+      "name": "Cron Lun/Mer/Ven 10h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "cron-autopost"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/social_media_library?select=*&order=used_count.asc,created_at.asc&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Fetch Prochaine Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "id": "fetch-image"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Si aucune image, arreter le workflow\nif (!items[0].json || !items[0].json.length) {\n  return [];\n}\nconst media = items[0].json[0];\nreturn [{\n  json: {\n    media_id: media.id,\n    user_id: media.user_id,\n    public_url: media.public_url,\n    description: media.description || media.file_name || 'Bien immobilier',\n    used_count: media.used_count || 0\n  }\n}];"
+      },
+      "name": "Extract Media",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "extract-media"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "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" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 600,\n  \"system\": \"Tu es l'expert marketing immobilier de Visit & Smile a Orleans (Alison Mendes, auto-entrepreneuse). Tu rediges des posts Instagram accrocheurs pour des biens immobiliers. Format : hook punchy sur la 1ere ligne, 2-3 phrases descriptives avec emojis, call-to-action (CTA), puis 8-12 hashtags pertinents (immobilier, Orleans, mots-cles du bien). Ton chaleureux et professionnel. Toujours en francais.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Redige un post Instagram pour cette photo : {{ $json.description }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Claude Genere Caption",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 300],
+      "id": "claude-caption"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combiner les infos du media avec la caption generee\nconst media = $('Extract Media').first().json;\nconst claude = items[0].json;\nconst caption = claude.content && claude.content[0] ? claude.content[0].text : 'Nouveau bien disponible !';\n\n// Scheduled_at = dans 1h pour laisser Alison approuver\nconst scheduledAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();\n\nreturn [{\n  json: {\n    user_id: media.user_id,\n    media_id: media.media_id,\n    public_url: media.public_url,\n    caption: caption,\n    scheduled_at: scheduledAt,\n    used_count: (media.used_count || 0) + 1\n  }\n}];"
+      },
+      "name": "Prepare Post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 300],
+      "id": "prepare-post"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/social_posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"platform\": \"instagram\",\n  \"content_text\": {{ JSON.stringify($json.caption) }},\n  \"media_url\": \"{{ $json.public_url }}\",\n  \"scheduled_at\": \"{{ $json.scheduled_at }}\",\n  \"status\": \"draft\"\n}",
+        "options": {}
+      },
+      "name": "Insert Social Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300],
+      "id": "insert-post"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/social_media_library?id=eq.{{ $('Prepare Post').first().json.media_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"used_count\": {{ $('Prepare Post').first().json.used_count }},\n  \"last_used_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "name": "Update Media Usage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1640, 300],
+      "id": "update-media"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zbzicommpdsvkesqzyvb.supabase.co/rest/v1/activity_feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpiemljb21tcGRzdmtlc3F6eXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4NDEsImV4cCI6MjA5MDk3NTg0MX0.5UTAnaWMf8u84UD101dAkEt6-WH6o6m1s4AbDXNSj2Q" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Prepare Post').first().json.user_id }}\",\n  \"agent\": \"social\",\n  \"icon\": \"fa-instagram\",\n  \"message\": \"<strong>Nouveau post IA</strong> — Pret a approuver dans 'Publications a venir'\"\n}",
+        "options": {}
+      },
+      "name": "Log Activity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1880, 300],
+      "id": "log-activity"
+    }
+  ],
+  "connections": {
+    "Cron Lun/Mer/Ven 10h": { "main": [[{ "node": "Fetch Prochaine Image", "type": "main", "index": 0 }]] },
+    "Fetch Prochaine Image": { "main": [[{ "node": "Extract Media", "type": "main", "index": 0 }]] },
+    "Extract Media": { "main": [[{ "node": "Claude Genere Caption", "type": "main", "index": 0 }]] },
+    "Claude Genere Caption": { "main": [[{ "node": "Prepare Post", "type": "main", "index": 0 }]] },
+    "Prepare Post": { "main": [[{ "node": "Insert Social Post", "type": "main", "index": 0 }]] },
+    "Insert Social Post": { "main": [[{ "node": "Update Media Usage", "type": "main", "index": 0 }]] },
+    "Update Media Usage": { "main": [[{ "node": "Log Activity", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

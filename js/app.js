@@ -296,13 +296,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 _navTransitionTimer = null;
                 pages.forEach(page => page.classList.remove('active', 'page-exit', 'page-enter'));
                 targetPage.classList.add('active', 'page-enter');
-                document.querySelector('.main-content')?.scrollTo(0, 0);
+                window.scrollTo(0, 0);
                 setTimeout(() => targetPage.classList.remove('page-enter'), 350);
             }, 150);
         } else {
             pages.forEach(page => page.classList.remove('active', 'page-exit', 'page-enter'));
             targetPage.classList.add('active');
-            document.querySelector('.main-content')?.scrollTo(0, 0);
+            window.scrollTo(0, 0);
         }
 
         document.getElementById('sidebar').classList.remove('open');

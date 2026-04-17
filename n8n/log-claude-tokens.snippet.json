@@ -1,0 +1,36 @@
+{
+  "_comment": "Ajouter ce nœud après CHAQUE appel Claude API dans n8n (chatbot, social, comptable)",
+  "_instructions": [
+    "1. Dans chaque workflow n8n qui appelle Claude API",
+    "2. Après le nœud Claude, ajouter ce nœud HTTP Request",
+    "3. Remplacer SUPABASE_URL et SUPABASE_ANON_KEY par vos valeurs",
+    "4. Remplacer AGENT_NAME par : chatbot / social / comptable / planning"
+  ],
+  "node": {
+    "name": "Log Tokens Supabase",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "parameters": {
+      "method": "POST",
+      "url": "VOTRE_SUPABASE_URL/rest/v1/claude_token_usage",
+      "sendHeaders": true,
+      "headerParameters": {
+        "parameters": [
+          { "name": "apikey", "value": "VOTRE_SUPABASE_ANON_KEY" },
+          { "name": "Authorization", "value": "Bearer VOTRE_SUPABASE_ANON_KEY" },
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "Prefer", "value": "return=minimal" }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\n  \"user_id\": \"{{ $('Get User').first().json.id }}\",\n  \"agent\": \"AGENT_NAME\",\n  \"input_tokens\": {{ $json.usage.input_tokens || 0 }},\n  \"output_tokens\": {{ $json.usage.output_tokens || 0 }}\n}"
+    }
+  },
+  "_chatbot_example": {
+    "jsonBody": "={\n  \"user_id\": \"{{ $('Webhook Chatbot').first().json.body.user_id }}\",\n  \"agent\": \"chatbot\",\n  \"input_tokens\": {{ $json.usage.input_tokens || 0 }},\n  \"output_tokens\": {{ $json.usage.output_tokens || 0 }}\n}"
+  },
+  "_social_example": {
+    "jsonBody": "={\n  \"user_id\": \"{{ $('Extract Media').first().json.user_id }}\",\n  \"agent\": \"social\",\n  \"input_tokens\": {{ $json.usage.input_tokens || 0 }},\n  \"output_tokens\": {{ $json.usage.output_tokens || 0 }}\n}"
+  }
+}
