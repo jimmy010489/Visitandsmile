@@ -3427,7 +3427,7 @@ textarea.form-input {
 }
 
 .mini-cal-day {
-    aspect-ratio: 1;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
