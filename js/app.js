@@ -1462,6 +1462,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalPost) {
             modalPost.style.display = 'flex';
             requestAnimationFrame(() => modalPost.classList.add('open'));
+            // Réinitialiser les champs bien + photo
+            document.getElementById('postPropertyType').value = '';
+            document.getElementById('postPropertyPrice').value = '';
+            document.getElementById('postPropertyNeighborhood').value = '';
+            document.getElementById('postPhotoUrl').value = '';
+            document.getElementById('postPhotoDesc').value = '';
+            document.getElementById('postPhotoSelected').style.display = 'none';
+            // Charger les photos de la médiathèque dans le sélecteur
+            loadPostPhotoSelector();
         }
     }
     function closeModalPost() {
@@ -1471,23 +1480,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Chargement de la médiathèque dans le sélecteur du modal post
+    async function loadPostPhotoSelector() {
+        const selector = document.getElementById('postPhotoSelector');
+        const emptyEl = document.getElementById('postPhotoEmpty');
+        if (!selector) return;
+        selector.innerHTML = '';
+
+        let medias = [];
+        if (isSupabaseConfigured) {
+            try { medias = await Media.list(); } catch(e) { medias = []; }
+        } else {
+            // Démo : photos fictives
+            medias = [
+                { id: 'demo1', public_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=120&q=60', description: 'Salon lumineux T3' },
+                { id: 'demo2', public_url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=120&q=60', description: 'Cuisine équipée' },
+                { id: 'demo3', public_url: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=120&q=60', description: 'Façade extérieure' }
+            ];
+        }
+
+        if (!medias.length) {
+            selector.innerHTML = `<div class="post-photo-empty"><i class="fas fa-images"></i><span>Aucune photo uploadée — va dans Réseaux Sociaux → Mes visuels</span></div>`;
+            return;
+        }
+
+        medias.forEach(m => {
+            const img = document.createElement('img');
+            img.className = 'post-photo-thumb';
+            img.src = m.public_url || '';
+            img.alt = m.description || m.file_name || '';
+            img.title = m.description || m.file_name || '';
+            img.addEventListener('click', () => {
+                // Désélectionner tous
+                selector.querySelectorAll('.post-photo-thumb').forEach(t => t.classList.remove('selected'));
+                img.classList.add('selected');
+                // Afficher la preview
+                document.getElementById('postPhotoUrl').value = m.public_url || '';
+                document.getElementById('postPhotoDesc').value = m.description || m.file_name || '';
+                const preview = document.getElementById('postPhotoPreview');
+                preview.src = m.public_url || '';
+                document.getElementById('postPhotoSelected').style.display = 'flex';
+            });
+            selector.appendChild(img);
+        });
+    }
+
+    // Bouton retirer photo
+    document.getElementById('btnRemovePhoto')?.addEventListener('click', () => {
+        document.getElementById('postPhotoUrl').value = '';
+        document.getElementById('postPhotoDesc').value = '';
+        document.getElementById('postPhotoSelected').style.display = 'none';
+        document.getElementById('postPhotoSelector')?.querySelectorAll('.post-photo-thumb').forEach(t => t.classList.remove('selected'));
+    });
+
     if (btnNouveauPost) btnNouveauPost.addEventListener('click', openModalPost);
     document.getElementById('modalPostClose')?.addEventListener('click', closeModalPost);
     document.getElementById('modalPostCancel')?.addEventListener('click', closeModalPost);
     modalPost?.addEventListener('click', (e) => { if (e.target === modalPost) closeModalPost(); });
 
-    // Génération IA du post
+    // Génération IA du post — avec infos du bien + photo
     const btnGenerateAI = document.getElementById('btnGenerateAI');
     if (btnGenerateAI) {
         btnGenerateAI.addEventListener('click', async () => {
-            // Rate limit : max 5 générations par minute
             if (!RateLimiter.check('generate', 5, 60000)) {
                 if (typeof showToast === 'function') showToast('Limite atteinte', 'Trop de générations. Attends quelques secondes.', 'warning');
                 return;
             }
 
-            const platform = document.getElementById('postPlatform').value;
-            const contentEl = document.getElementById('postContent');
+            const platform   = document.getElementById('postPlatform').value;
+            const propType   = document.getElementById('postPropertyType').value.trim();
+            const propPrice  = document.getElementById('postPropertyPrice').value.trim();
+            const propArea   = document.getElementById('postPropertyNeighborhood').value.trim();
+            const photoUrl   = document.getElementById('postPhotoUrl').value;
+            const photoDesc  = document.getElementById('postPhotoDesc').value;
+            const contentEl  = document.getElementById('postContent');
             const hashtagsEl = document.getElementById('postHashtags');
 
             btnGenerateAI.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deadpool IA réfléchit...';
@@ -1498,21 +1564,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = await fetch(CONFIG.N8N_BASE_URL + CONFIG.WEBHOOKS.GENERATE_CONTENT, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ platform, user_id: currentUser?.id })
+                        body: JSON.stringify({
+                            platform,
+                            user_id: currentUser?.id,
+                            property_type: propType || null,
+                            property_price: propPrice || null,
+                            neighborhood: propArea || null,
+                            photo_url: photoUrl || null,
+                            photo_description: photoDesc || null
+                        })
                     });
                     const data = await response.json();
                     contentEl.value = data.content_text || data.text || '';
                     hashtagsEl.value = (data.hashtags || []).join(' ');
                 } else {
-                    // Fallback démo
+                    // Fallback démo — génère un contenu basé sur les infos renseignées
                     await new Promise(r => setTimeout(r, 1500));
+                    const bienInfo = propType || 'appartement';
+                    const prixInfo = propPrice || '185 000€';
+                    const quartierInfo = propArea || 'Orléans';
+                    const hasPhoto = !!photoUrl;
                     const demoContent = {
-                        instagram: "✨ Coup de coeur du jour !\n\nDécouvrez ce magnifique T3 de 65m² avec balcon plein sud à Saint-Marceau. Lumineux, rénové, dans une résidence calme.\n\n📍 Orléans — Saint-Marceau\n💰 185 000€\n\nContactez-moi pour organiser une visite ! 🏠",
-                        facebook: "🏠 Le marché immobilier à Orléans — Tendances avril 2026\n\nLes prix se stabilisent dans l'hyper-centre avec une légère baisse de 2% sur le trimestre. Le secteur La Source reste attractif pour les primo-accédants avec des opportunités sous les 150k€.\n\nVous cherchez votre futur chez-vous ? Parlons-en !\n\nAlison Mendes — Visit & Smile 🤝",
-                        linkedin: "📊 Bilan Q1 2026 — Marché immobilier orléanais\n\nAprès une année 2025 de transition, le marché immobilier à Orléans montre des signes positifs :\n\n• Volume de transactions en hausse de 12%\n• Délai de vente moyen : 45 jours (-8 jours vs 2025)\n• Les biens rénovés se vendent 15% plus vite\n\nLe secteur reste porteur pour les investisseurs avisés.\n\n#immobilier #orleans #investissement"
+                        instagram: `✨ ${hasPhoto ? 'Regardez ce bijou !' : 'Coup de cœur du jour !'}\n\n${bienInfo} à découvrir à ${quartierInfo}${prixInfo ? ` — ${prixInfo}` : ''}.\nLumineux, bien situé, prêt à accueillir votre projet de vie.\n\n📍 ${quartierInfo}\n${prixInfo ? `💰 ${prixInfo}\n` : ''}\nContactez-moi pour organiser une visite ! 🏠\n\n#immobilier #${quartierInfo.toLowerCase().replace(/\s/g, '')} #visitandsmile`,
+                        facebook: `🏠 Nouveau bien disponible !\n\n${bienInfo} situé à ${quartierInfo}${prixInfo ? ` — affiché à ${prixInfo}` : ''}.\n\nBien placé, idéal pour${propType?.toLowerCase().includes('t') ? ' une famille' : ' un investissement'}. Je suis disponible pour vous le faire visiter cette semaine !\n\nAlison Mendes — Visit & Smile 🤝\n\n#immobilier #${quartierInfo.toLowerCase().replace(/\s/g, '')}`,
+                        linkedin: `📌 Nouveau mandat — ${bienInfo} à ${quartierInfo}\n\n${prixInfo ? `Prix : ${prixInfo}` : 'Prix sur demande'}\n\nBien solide avec un fort potentiel${hasPhoto ? '. Les photos parlent d\'elles-mêmes.' : '.'} Si vous êtes à la recherche d\'un bien ou d\'un investissement dans la région, n\'hésitez pas à me contacter.\n\n#immobilier #transaction #${quartierInfo.toLowerCase().replace(/\s/g, '')}`
                     };
                     contentEl.value = demoContent[platform] || demoContent.instagram;
-                    hashtagsEl.value = '#immobilier #orleans #visitandsmile';
+                    hashtagsEl.value = `#immobilier #${quartierInfo.toLowerCase().replace(/[\s-]/g, '')} #visitandsmile`;
                 }
             } catch (e) {
                 console.error('AI generation error:', e);
@@ -3050,9 +3128,31 @@ Sois précis, pratique et orienté résultats. Réponds en français.`;
 
     const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-    // RDV data for calendar dots (uses demoAppointments or Supabase)
+    // RDV data for calendar dots (Supabase ou fallback démo)
+    let calendarRDVs = demoAppointments;
+
     function getCalendarRDV() {
-        return demoAppointments; // In production mode, this would come from Supabase
+        return calendarRDVs;
+    }
+
+    async function loadCalendarRDVs() {
+        if (!isSupabaseConfigured) return;
+        try {
+            const data = await Appointments.list({});
+            if (data && data.length > 0) {
+                calendarRDVs = data.map(a => ({
+                    ...a,
+                    date_time: a.start_time || '',
+                    client_name: a.clients
+                        ? `${a.clients.first_name || ''} ${a.clients.last_name || ''}`.trim()
+                        : (a.client_name || '—'),
+                }));
+                renderCalendar();
+                if (calSelectedDate) showAgendaForDate(calSelectedDate);
+            }
+        } catch (err) {
+            console.warn('[Calendar] Erreur chargement RDV:', err.message);
+        }
     }
 
     function renderCalendar() {
@@ -3154,8 +3254,9 @@ Sois précis, pratique et orienté résultats. Réponds en français.`;
         renderCalendar();
     });
 
-    // Initial render
+    // Initial render (démo) puis rechargement Supabase
     renderCalendar();
+    loadCalendarRDVs();
 
     // ===== FAB (Floating Action Button) =====
     const fabBtn = document.getElementById('fabBtn');
